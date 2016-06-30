@@ -1,0 +1,42 @@
+GameMode
+- Exists solely on the server. Handles sessions for multiplayer and
+  defines the rules of the games. Things like time limits, how much score
+  is awarded for what, the number of players, etc.. are set in this class.
+  Controls the state of the game, and states are transitioned here.
+
+GameState
+- Exists on the client and server. Contains the state of the game which
+  could be things like a list of connected players, the scores, where
+  pieces are in a chess game, what tiles exist in Mahjong, etc... The
+  GameState exists on the server and all clients and can replicate freely
+  to keep all machines up to date.
+
+# The GameMode defines the definites. The GameState reflects the game's current state.
+
+GameInstance
+- Exists solely on the server. Acts as persistent data storage between levels.
+  Used for requesting to join sessions as well (via GameSession->JoinSession())
+
+GameSession
+- Handles interactions with the OnlineSubsystem (obstraction for PSN, Steam, etc...).
+  Handles accepting login, spectator permissions, voice chat push to talk requirements,
+  starting and ending sessions, etc...
+
+PlayerState
+- Used to replace PlayerControllers in network replication.
+  Each player has one of these, so when PlayerControllers/Pawns
+  are destroyed you can spawn new ones by reading data from
+  PlayerState. In a MOBA context, when the hero dies the
+  PlayerController is destroyed and the pawn dies. When
+  the hero respawns a new PlayerController is created using
+  the data stored in the PlayerState (such as xp, level, etc...).
+  Non-players (like AIs) would not have a PlayerState. The
+  PlayerState can be thought of as *the player* and their stats
+  would go here. PlayerState is replicated.
+
+PlayerController
+- A client version of PlayerState. The exact differences need to be explored.
+
+LocalPlayer
+- Exists for every client. Basically "the user". Contains an instance of the user's save
+  game, their controller Id, and their nickname.

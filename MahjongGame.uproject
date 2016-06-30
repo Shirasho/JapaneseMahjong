@@ -7,16 +7,13 @@
 		{
 			"Name": "MahjongGame",
 			"Type": "Runtime",
-			"LoadingPhase": "Default",
-			"AdditionalDependencies": [
-				"Engine",
-				"CoreUObject"
-			]
-		},
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
 		{
-			"Name": "MahjongGameLoadingScreen",
-			"Type": "Runtime",
-			"LoadingPhase": "PreLoadingScreen"
+			"Name": "SoundVisualizations",
+			"Enabled": true
 		}
 	],
 	"TargetPlatforms": [

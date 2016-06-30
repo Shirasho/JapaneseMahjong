@@ -1,37 +1,46 @@
 // Distributed by Shirasho Media 2016. All rights reserved. Available for distribution under the GNU GENERAL PUBLIC LICENSE v3.
 
-#pragma once
+#include "MahjongGame.h"
+#include "MahjongGameMode.h"
 
-#include "GameFramework/GameMode.h"
-#include "MahjongGameMode.generated.h"
+#include "MahjongPlayerController.h"
+#include "MahjongPlayerState.h"
+#include "MahjongGameState.h"
+#include "MahjongGameSession.h"
 
-class UUserWidget;
+AMahjongGameMode::AMahjongGameMode() : Super() {
 
-UCLASS(abstract)
-class JAPANESEMAHJONG_API AMahjongGameMode : public AGameMode
-{
-	GENERATED_BODY()
-	
-protected:
+	static ConstructorHelpers::FClassFinder<APawn> CH_PlayerPawn(TEXT("/Game/Blueprints/Pawns/PlayerPawn"));
+	static ConstructorHelpers::FClassFinder<APawn> CH_AIPawn(TEXT("/Game/Blueprints/Pawns/AIPawn"));
 
-	AMahjongGameMode();
+	DefaultPawnClass = CH_PlayerPawn.Class;
+	AIPawnClass = CH_AIPawn.Class;
 
-protected:
+	//@TODO
+	//HUDClass = AMahjongHUD::StaticClass();
+	PlayerControllerClass = AMahjongPlayerController::StaticClass();
+	PlayerStateClass = AMahjongPlayerState::StaticClass();
+	//Spectatorclass = AMahjongSpectatorPawn::StaticClass();
+	GameStateClass = AMahjongGameState::StaticClass();
+	//ReplaySpectatorPlayerControllerClass = AMahjongReplaySpectator::StaticClass();
+}
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "GUI")
-	TSubclassOf<UUserWidget> StartingWidgetClass;
+TSubclassOf<AGameSession> AMahjongGameMode::GetGameSessionClass() const {
+	return AMahjongGameSession::StaticClass();
+}
 
-public:
+bool AMahjongGameMode::AllowCheats(APlayerController* P) {
+	return true;
+}
 
-	virtual void BeginPlay() override;
+UClass* AMahjongGameMode::GetDefaultPawnClassForController_Implementation(AController* InController) {
+	if (InController->IsA<AMahjongAIController>()) {
+		return AIPawnClass;
+	}
 
-	UFUNCTION(BlueprintCallable, Category = "GUI")
-	UUserWidget* AddMenuWidget(TSubclassOf<UUserWidget> WidgetToAdd);
+	return Super::GetDefaultPawnClassForController_Implementation(InController);
+}
 
-	UFUNCTION(BlueprintCallable, Category = "GUI")
-	void RemoveMenuWidget(UUserWidget* WidgetToRemove);
-
-private:
-
-	TArray<UUserWidget*> ActiveWidgets;
-};
+void AMahjongGameMode::DetermineMatchWinner() {
+	// Do nothing.
+}

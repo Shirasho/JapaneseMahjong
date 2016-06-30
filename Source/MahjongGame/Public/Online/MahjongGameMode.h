@@ -2,36 +2,52 @@
 
 #pragma once
 
-#include "GameFramework/GameMode.h"
 #include "MahjongGameMode.generated.h"
 
-class UUserWidget;
+class AMahjongAIController;
 
-UCLASS(abstract)
-class JAPANESEMAHJONG_API AMahjongGameMode : public AGameMode
+UCLASS(config=Game)
+class AMahjongGameMode : public AGameMode
 {
 	GENERATED_BODY()
-	
+
 protected:
 
 	AMahjongGameMode();
+	
+protected:
+
+	/** The AI pawn class. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameMode)
+	TSubclassOf<APawn> AIPawnClass;
+
+	/** The amount of time a player is allocated to take their turn (in seconds). */
+	UPROPERTY(config)
+	int32 PlayerTurnTime;
+
+	//@TODO
+	// This is where we would store the scores for each thing. This means we would probably
+	// want to create a TMap that stores a hand and a han value.
+
+	/** The array of active AI controllers. */
+	UPROPERTY()
+	TArray<AMahjongAIController*> AIControllers;
+
+	/* The handle for the DefaultTimer timer. */
+	FTimerHandle TimerHandle_DefaultTimer;
 
 protected:
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "GUI")
-	TSubclassOf<UUserWidget> StartingWidgetClass;
+	/** Whether to create the exec manager (console command cheats) */
+	virtual bool AllowCheats(APlayerController* P) override;
 
-public:
+	/** Returns the game session class to use. */
+	virtual TSubclassOf<AGameSession> GetGameSessionClass() const override;
 
-	virtual void BeginPlay() override;
+	/** Returns default pawn class for given controller */
+	virtual UClass* GetDefaultPawnClassForController_Implementation(AController* InController) override;
 
-	UFUNCTION(BlueprintCallable, Category = "GUI")
-	UUserWidget* AddMenuWidget(TSubclassOf<UUserWidget> WidgetToAdd);
-
-	UFUNCTION(BlueprintCallable, Category = "GUI")
-	void RemoveMenuWidget(UUserWidget* WidgetToRemove);
-
-private:
-
-	TArray<UUserWidget*> ActiveWidgets;
+	/** Determine who won the game. */
+	virtual void DetermineGameWinner();
+	
 };

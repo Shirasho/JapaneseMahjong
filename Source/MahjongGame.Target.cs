@@ -50,6 +50,7 @@ public class MahjongGameTarget : TargetRules
     {
         return new List<UnrealTargetConfiguration> { UnrealTargetConfiguration.Development };
     }
+
     public override List<GUBPFormalBuild> GUBP_GetConfigsForFormalBuilds_MonolithicOnly(UnrealTargetPlatform HostPlatform)
     {
         if (HostPlatform == UnrealTargetPlatform.Win64)
