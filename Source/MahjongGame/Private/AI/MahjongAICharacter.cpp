@@ -6,8 +6,8 @@
 #include "MahjongAIController.h"
 
 AMahjongAICharacter::AMahjongAICharacter(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer) {
-
+	: Super(ObjectInitializer)
+{
 	AIControllerClass = AMahjongAIController::StaticClass();
 
 	UpdatePawnMeshes();
@@ -15,12 +15,13 @@ AMahjongAICharacter::AMahjongAICharacter(const FObjectInitializer& ObjectInitial
 	bUseControllerRotationYaw = true;
 }
 
-bool AMahjongAICharacter::IsFirstPerson() const {
+bool AMahjongAICharacter::IsFirstPerson() const
+{
 	return false;
 }
 
-void AMahjongAICharacter::FaceRotation(FRotator NewRotation, float DeltaTime) {
-
+void AMahjongAICharacter::FaceRotation(FRotator NewRotation, float DeltaTime)
+{
 	FRotator CurrentRotation = FMath::RInterpTo(GetActorRotation(), NewRotation, DeltaTime, 8.f);
 
 	Super::FaceRotation(CurrentRotation, DeltaTime);

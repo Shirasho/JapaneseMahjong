@@ -7,15 +7,17 @@
 #include "MahjongGameSession.h"
 
 AMahjongGameMode_Menu::AMahjongGameMode_Menu(const FObjectInitializer& ObjectInitializer) 
-	: Super(ObjectInitializer) {
-
+	: Super(ObjectInitializer)
+{
 	PlayerControllerClass = AMahjongPlayerController_Menu::StaticClass();
 }
 
-void AMahjongGameMode_Menu::RestartPlayer(AController* NewPlayer) {
+void AMahjongGameMode_Menu::RestartPlayer(AController* NewPlayer)
+{
 	// Do nothing
 }
 
-TSubclassOf<AGameSession> AMahjongGameMode_Menu::GetGameSessionClass() const {
+TSubclassOf<AGameSession> AMahjongGameMode_Menu::GetGameSessionClass() const
+{
 	return AMahjongGameSession::StaticClass();
 }

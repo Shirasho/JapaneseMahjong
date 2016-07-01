@@ -13,50 +13,56 @@ UMahjongSaveGame::UMahjongSaveGame(const FObjectInitializer& ObjectInitializer)
 	SetToDefaults();
 }
 
-void UMahjongSaveGame::SetToDefaults() {
-
+void UMahjongSaveGame::SetToDefaults()
+{
 	bIsDirty = false;
 
 	Gamma = 2.2f;
 }
 
-uint32 UMahjongSaveGame::GetGameScoreAverage(EMahjongGameMode GameMode) const {
+uint32 UMahjongSaveGame::GetGameScoreAverage(EMahjongGameMode GameMode) const
+{
 	return GameScoreAverage::FindOrAdd(GameMode);
 }
 
-uint32 UMahjongSaveGame::GetGameCount(EMahjongGameMode GameMode) const {
+uint32 UMahjongSaveGame::GetGameCount(EMahjongGameMode GameMode) const
+{
 	return GameCount::FindOrAdd(GameMode);
 }
 
-uint32 UMahjongSaveGame::GetGameWins(EMahjongGameMode GameMode) const {
+uint32 UMahjongSaveGame::GetGameWins(EMahjongGameMode GameMode) const
+{
 	return GameWins::FindOrAdd(GameMode);
 }
 
-uint32 UMahjongSaveGame::GetGameLeaves(EMahjongGameMode GameMode) const {
+uint32 UMahjongSaveGame::GetGameLeaves(EMahjongGameMode GameMode) const
+{
 	return GameLeaves::FindOrAdd(GameMode);
 }
 
-float UMahjongSaveGame::GetWinPercentage(EMahjongGameMode GameMode) const {
+float UMahjongSaveGame::GetWinPercentage(EMahjongGameMode GameMode) const
+{
 	return (float)UMathBlueprintLibraray::SetPrecision_Double((double)GetGameWins(GameMode) / (double)GetGameCount(GameMode), 2);
 }
 
-void UMahjongSaveGame::Save() {
-
+void UMahjongSaveGame::Save()
+{
 	UGameplayStatics::SaveGameToSlot(this, SlotName, UserIndex);
 	bIsDirty = false;
 }
 
-UMahjongSaveGame* UMahjongSaveGame::LoadSaveGame(FString SlotName, int32 UserIndex) {
-
+UMahjongSaveGame* UMahjongSaveGame::LoadSaveGame(FString SlotName, int32 UserIndex)
+{
 	UMahjongSaveGame* Result = nullptr;
 
 	// First player sign-in can happen before UWorld exists, which means no
 	// online subsystem, which means no usernames, which means no slot names.
 	// Save games are not valid in this state.
-	if (SlotName.Len() > 0) {
-		
+	if (SlotName.Len() > 0)
+	{
 		Result = Cast<UMahjongSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, UserIndex);
-		if (!Result) {
+		if (!Result)
+		{
 			Result = Cast<UMahjongSaveGame>(UGameplayStatics::CreateSaveGameObject(UMahjongSaveGame::StaticClass()));
 		}
 		check(Result);
@@ -68,19 +74,21 @@ UMahjongSaveGame* UMahjongSaveGame::LoadSaveGame(FString SlotName, int32 UserInd
 	return Result;
 }
 
-void UMahjongSaveGame::SaveIfDirty() {
-
-	if (bIsDirty) {
+void UMahjongSaveGame::SaveIfDirty()
+{
+	if (bIsDirty)
+	{
 		Save();
 	}
 }
 
-void UMahjongSaveGame::AddGameResult(EMahjongGameMode GameMode, int32 Score, bool bIsGameWinner) {
-
+void UMahjongSaveGame::AddGameResult(EMahjongGameMode GameMode, int32 Score, bool bIsGameWinner)
+{
 	// Update the number of games played in this mode.
 	uint32 GameModeCount = ++(GameCount.FindOrAdd(GameMode));
 	// Update the number of wins in this mode.
-	if (bIsGameWinner) {
+	if (bIsGameWinner)
+	{
 		++(GameWins.FindOrAdd(GameMode));
 	}
 	// Update the total score earned in this game mode.
@@ -91,12 +99,14 @@ void UMahjongSaveGame::AddGameResult(EMahjongGameMode GameMode, int32 Score, boo
 	bIsDirty = true;
 }
 
-void UMahjongSaveGame::AddGameLeave(EMahjongGameMode GameMode) {
+void UMahjongSaveGame::AddGameLeave(EMahjongGameMode GameMode)
+{
 	++(GameLeaves.FindOrAdd(GameMode));
 
 	bIsDirty = true;
 }
 
-void UMahjongSaveGame::FetchKeyBindings() {
+void UMahjongSaveGame::FetchKeyBindings()
+{
 
 }

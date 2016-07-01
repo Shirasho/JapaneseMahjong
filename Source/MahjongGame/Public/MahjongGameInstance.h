@@ -33,7 +33,8 @@ private:
 public:
 
 	/** Returns true if the game is in online mode */
-	bool GetIsOnline() const { return bIsOnline; }
+	bool GetIsOnline() const
+{ return bIsOnline; }
 
 	/** Sets the online mode of the game */
 	void SetIsOnline(bool bInIsOnline);

@@ -12,42 +12,47 @@ AMahjongAIController::AMahjongAIController(const FObjectInitializer& ObjectIniti
 	bWantsPlayerState = true;
 }
 
-void AMahjongAIController::Possess(APawn* InPawn) {
-
+void AMahjongAIController::Possess(APawn* InPawn)
+{
 	Super::Possess(InPawn);
 
 	AMahjongAICharacter* AICharacter = Cast<AMahjongAICharacter>(InPawn);
 
-	if (AICharacter && AICharacter->AIBehavior) {
-		if (AICharacter->AIBehavior->BlackboardAsset) {
+	if (AICharacter && AICharacter->AIBehavior)
+	{
+		if (AICharacter->AIBehavior->BlackboardAsset)
+		{
 			BlackboardComponent->InitializeBlackboard(*AICharacter->AIBehavior->BlackboardAsset);
 		}
 
-		if (BehaviorComponent) {
+		if (BehaviorComponent)
+		{
 			BehaviorComponent->StartTree(*(AICharacter->AIBehavior));
 		}
 	}
 }
 
-void AMahjongAIController::UnPossess() {
-
+void AMahjongAIController::UnPossess()
+{
 	Super::UnPossess();
 
-	if (BehaviorComponent) {
+	if (BehaviorComponent)
+	{
 		BehaviorComponent->StopTree();
 	}
 }
 
-void AMahjongAIController::BeginInactiveState() {
-
+void AMahjongAIController::BeginInactiveState()
+{
 	Super::BeginInactiveState();
 
 	GetWorld()->GetAuthGameMode()->RestartPlayer(this);
 }
 
-void AMahjongAIController::GameHasEnded(AActor* EndGameFocus, bool bIsWinner) {
-
-	if (BehaviorComponent) {
+void AMahjongAIController::GameHasEnded(AActor* EndGameFocus, bool bIsWinner)
+{
+	if (BehaviorComponent)
+	{
 		BehaviorComponent->StopTree();
 	}
 }

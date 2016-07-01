@@ -3,9 +3,10 @@
 #include "MahjongGame.h"
 #include "AssetRegistryModule.h"
 
-class FMahjongGameModule : public FDefaultGameModuleImpl {
-	
-	virtual void StartupModule() override {
+class FMahjongGameModule : public FDefaultGameModuleImpl
+{
+	virtual void StartupModule() override
+	{
 		FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
 
 		//Hot reload hack
@@ -14,7 +15,8 @@ class FMahjongGameModule : public FDefaultGameModuleImpl {
 		//FMahjongStyle::Initialize();
 	}
 
-	virtual void ShutdownModule() override {
+	virtual void ShutdownModule() override
+	{
 		//@TODO
 		//FMahjongStyle::Shutdown();
 	}

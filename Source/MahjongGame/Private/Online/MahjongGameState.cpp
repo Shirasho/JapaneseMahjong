@@ -5,8 +5,8 @@
 
 
 AMahjongGameState::AMahjongGameState(const FObjectInitializer& ObjectInitializer) 
-	: Super(ObjectInitializer) {
-
+	: Super(ObjectInitializer)
+{
 	RemainingTime = 0;
 	bTimerPaused = false;
 }

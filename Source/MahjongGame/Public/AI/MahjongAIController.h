@@ -9,7 +9,7 @@ class UBehaviorTreeComponent;
 class UBlackboardComponent;
 
 
-UCLASS(config=Game)
+UCLASS(config = Game)
 class AMahjongAIController : public AAIController {
 
 	GENERATED_BODY()
@@ -33,7 +33,9 @@ public:
 
 public:
 	/** Returns BlackboardComp subobject **/
-	FORCEINLINE UBlackboardComponent* GetBlackboardComponent() const { return BlackboardComponent; }
+	FORCEINLINE UBlackboardComponent* GetBlackboardComponent() const
+{ return BlackboardComponent; }
 	/** Returns BehaviorComp subobject **/
-	FORCEINLINE UBehaviorTreeComponent* GetBehaviorComponent() const { return BehaviorComponent; }
+	FORCEINLINE UBehaviorTreeComponent* GetBehaviorComponent() const
+{ return BehaviorComponent; }
 };

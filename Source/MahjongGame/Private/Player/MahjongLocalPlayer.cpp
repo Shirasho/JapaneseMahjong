@@ -11,13 +11,15 @@
 //#include "OnlineSubsystemUtilsClasses.h"
 
 
-UMahjongLocalPlayer::UMahjongLocalPlayer() : Super() {
+UMahjongLocalPlayer::UMahjongLocalPlayer() : Super()
+{
 
 }
 
-UMahjongSaveGame* UMahjongLocalPlayer::GetSaveGame() const {
-
-	if (!SaveGame) {
+UMahjongSaveGame* UMahjongLocalPlayer::GetSaveGame() const
+{
+	if (!SaveGame)
+	{
 		// Cast away constness to enable caching.
 		UMahjongLocalPlayer* MutableThis = const_cast<UMahjongLocalPlayer*>(this);
 		MutableThis->LoadSaveGame();
@@ -26,19 +28,21 @@ UMahjongSaveGame* UMahjongLocalPlayer::GetSaveGame() const {
 	return SaveGame;
 }
 
-void UMahjongLocalPlayer::LoadSaveGame() {
-
+void UMahjongLocalPlayer::LoadSaveGame()
+{
 	// If we changed the controller id or user, we need to load the new save.
-	if (SaveGame && (GetControllerId() != SaveGame->GetUserIndex() || GetNickname() != SaveGame->GetName())) {
+	if (SaveGame && (GetControllerId() != SaveGame->GetUserIndex() || GetNickname() != SaveGame->GetName()))
+	{
 		SaveGame->SaveIfDirty();
 		SaveGame = nullptr;
 	}
 
-	if (!SaveGame) {
-
+	if (!SaveGame)
+	{
 		FPlatformUserId PlatformId = GetControllerId();
 		auto Identity = Online::GetIdentityInterface();
-		if (Identity.IsValid() && GetPreferredUniqueNetId().IsValid()) {
+		if (Identity.IsValid() && GetPreferredUniqueNetId().IsValid())
+		{
 			PlatformId = Identity->GetPlatformUserIdFromUniqueNetId(*GetPreferredUniqueNetId());
 		}
 
@@ -46,18 +50,20 @@ void UMahjongLocalPlayer::LoadSaveGame() {
 	}
 }
 
-void UMahjongLocalPlayer::SetControllerId(int32 NewControllerId) {
-
+void UMahjongLocalPlayer::SetControllerId(int32 NewControllerId)
+{
 	//ULocalPlayer::SetControllerId(NewControllerId);
 	Super::SetControllerId(NewControllerId);
 
 	LoadSaveGame();
 }
 
-FString UMahjongLocalPlayer::GetNickname() const {
+FString UMahjongLocalPlayer::GetNickname() const
+{
 	FString UserHandle = Super::GetNickname();
 
-	if (UserHandle.Len() > PLAYER_NAME_LENGTH_MAX) {
+	if (UserHandle.Len() > PLAYER_NAME_LENGTH_MAX)
+	{
 		UserHandle = UserHandle.Left(PLAYER_NAME_LENGTH_MAX) + TEXT("...");
 	}
 
@@ -65,20 +71,25 @@ FString UMahjongLocalPlayer::GetNickname() const {
 
 	// Check for duplicate nicknames.
 	static bool bReentry = false;
-	if (!bReentry) {
+	if (!bReentry)
+	{
 		bReentry = true;
 
 		UMahjongGameInstance* GameInstance = GetWorld() ? Cast<UMahjongGameInstance>(GetWorld()->GetGameInstance()) : nullptr;
-		if (GameInstance) {
+		if (GameInstance)
+		{
 			// Check all names that occur before ours that are the same.
 			const TArray<ULocalPlayer*>& LocalPlayers = GameInstance->GetLocalPlayers();
 
-			for (const ULocalPlayer* LocalPlayer : LocalPlayers) {
-				if (LocalPlayer == this) {
+			for (const ULocalPlayer* LocalPlayer : LocalPlayers)
+			{
+				if (LocalPlayer == this)
+				{
 					break;
 				}
 
-				if (UserHandle == LocalPlayer->GetNickname()) {
+				if (UserHandle == LocalPlayer->GetNickname())
+				{
 					bReplace = true;
 					break;
 				}
@@ -86,8 +97,9 @@ FString UMahjongLocalPlayer::GetNickname() const {
 		}
 		bReentry = false;
 	}
-	
-	if (bReplace) {
+
+	if (bReplace)
+	{
 		UserHandle = FString::Printf(TEXT("Player%i"), GetControllerId() + 1);
 	}
 

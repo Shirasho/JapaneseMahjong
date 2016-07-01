@@ -5,11 +5,14 @@
 
 #include "MahjongGameInstance.h"
 
-UMahjongEngine::UMahjongEngine() : Super() {
+UMahjongEngine::UMahjongEngine()
+	: Super()
+{
 
 }
 
-void UMahjongEngine::Init(IEngineLoop* InEngineLoop) {
+void UMahjongEngine::Init(IEngineLoop* InEngineLoop)
+{
 	Super::Init(InEngineLoop);
 }
 

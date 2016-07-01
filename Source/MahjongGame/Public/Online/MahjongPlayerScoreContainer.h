@@ -16,32 +16,39 @@ struct FMahjongPlayerScoreContainer {
 	UPROPERTY()
 	uint32 Score;
 
-	void SetScore(uint32 Value) {
+	void SetScore(uint32 Value)
+{
 		Score = Value;
 	}
 
-	void AddScore(uint32 Value) {
+	void AddScore(uint32 Value)
+{
 		Score += Value;
 	}
 
-	void SubtractScore(uint32 Value) {
-		if ((int32)Score - (int32)Value < 0) {
+	void SubtractScore(uint32 Value)
+{
+		if ((int32)Score - (int32)Value < 0)
+{
 			Score = 0;
 		} else {
 			Score -= Value;
 		}
 	}
 
-	bool IsValid() const {
+	bool IsValid() const
+{
 		if (!PlayerState) return false;
 		return PlayerState->IsValidLowLevel();
 	}
 
-	const AMahjongPlayerState* GetPlayerState() const {
+	const AMahjongPlayerState* GetPlayerState() const
+{
 		return PlayerState;
 	}
 
-	FMahjongPlayerScoreContainer() {
+	FMahjongPlayerScoreContainer()
+{
 		Score = 0;
 		PlayerState = nullptr;
 	}

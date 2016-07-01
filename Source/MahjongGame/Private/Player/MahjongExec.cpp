@@ -6,32 +6,37 @@
 #include "MahjongGameMode.h"
 
 UMahjongExec::UMahjongExec(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer) {
+	: Super(ObjectInitializer)
+{
 
 }
 
-void UMahjongExec::Cheat(const FString& Message) {
+void UMahjongExec::Cheat(const FString& Message)
+{
 	AMahjongPlayerController* PlayerController = GetOuterAMahjongPlayerController();
 	check(PlayerController);
 
 	PlayerController->ServerCheat(Message.Left(128));
 }
 
-void UMahjongExec::AddTileToHand(int32 TileId) {
+void UMahjongExec::AddTileToHand(int32 TileId)
+{
 
 }
 
-void UMahjongExec::CalculateShanten() {
+void UMahjongExec::CalculateShanten()
+{
 
 }
 
-void UMahjongExec::ForceGameStart() {
-
+void UMahjongExec::ForceGameStart()
+{
 	AMahjongPlayerController* PlayerController = GetOuterAMahjongPlayerController();
 	check(PlayerController);
 
 	AMahjongGameMode* GameMode = PlayerController->GetWorld()->GetAuthGameMode<AMahjongGameMode>();
-	if (GameMode && GameMode->GetMatchState() == MatchState::WaitingToStart) {
+	if (GameMode && GameMode->GetMatchState() == MatchState::WaitingToStart)
+	{
 		GameMode->StartMatch();
 	}
 }

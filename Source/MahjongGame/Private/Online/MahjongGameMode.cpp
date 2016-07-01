@@ -8,9 +8,9 @@
 #include "MahjongGameState.h"
 #include "MahjongGameSession.h"
 
-AMahjongGameMode::AMahjongGameMode(const FObjectInitializer& ObjectInitializer) 
-	: Super(ObjectInitializer) {
-
+AMahjongGameMode::AMahjongGameMode(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
 	static ConstructorHelpers::FClassFinder<APawn> CH_PlayerPawn(TEXT("/Game/Blueprints/Pawns/PlayerPawn"));
 	static ConstructorHelpers::FClassFinder<APawn> CH_AIPawn(TEXT("/Game/Blueprints/Pawns/AIPawn"));
 
@@ -26,22 +26,27 @@ AMahjongGameMode::AMahjongGameMode(const FObjectInitializer& ObjectInitializer)
 	//ReplaySpectatorPlayerControllerClass = AMahjongReplaySpectator::StaticClass();
 }
 
-TSubclassOf<AGameSession> AMahjongGameMode::GetGameSessionClass() const {
+TSubclassOf<AGameSession> AMahjongGameMode::GetGameSessionClass() const
+{
 	return AMahjongGameSession::StaticClass();
 }
 
-bool AMahjongGameMode::AllowCheats(APlayerController* P) {
+bool AMahjongGameMode::AllowCheats(APlayerController* P)
+{
 	return true;
 }
 
-UClass* AMahjongGameMode::GetDefaultPawnClassForController_Implementation(AController* InController) {
-	if (InController->IsA<AMahjongAIController>()) {
+UClass* AMahjongGameMode::GetDefaultPawnClassForController_Implementation(AController* InController)
+{
+	if (InController->IsA<AMahjongAIController>())
+	{
 		return AIPawnClass;
 	}
 
 	return Super::GetDefaultPawnClassForController_Implementation(InController);
 }
 
-void AMahjongGameMode::DetermineGameWinner() {
+void AMahjongGameMode::DetermineGameWinner()
+{
 	// Do nothing.
 }

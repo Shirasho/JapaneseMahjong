@@ -4,16 +4,14 @@
 #include "MathBlueprintLibrary.h"
 
 
-float UMathBlueprintLibrary::SetPrecision_Float(float Value, uint32 DecimalPlaces) {
-
+float UMathBlueprintLibrary::SetPrecision_Float(float Value, uint32 DecimalPlaces)
+{
 	float PowerValue = FMath::Pow(10, DecimalPlaces);
-
 	return (float)(FMath::Floor(Value * PowerValue)) / PowerValue;
 }
 
-double UMathBlueprintLibrary::SetPrecision_Double(double Value, uint32 DecimalPlaces) {
-
+double UMathBlueprintLibrary::SetPrecision_Double(double Value, uint32 DecimalPlaces)
+{
 	double PowerValue = FMath::Pow(10, DecimalPlaces);
-
 	return (double)(FMath::Floor(Value * PowerValue)) / PowerValue;
 }
