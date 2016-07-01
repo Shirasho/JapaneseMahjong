@@ -8,7 +8,8 @@
 #include "MahjongGameState.h"
 #include "MahjongGameSession.h"
 
-AMahjongGameMode::AMahjongGameMode() : Super() {
+AMahjongGameMode::AMahjongGameMode(const FObjectInitializer& ObjectInitializer) 
+	: Super(ObjectInitializer) {
 
 	static ConstructorHelpers::FClassFinder<APawn> CH_PlayerPawn(TEXT("/Game/Blueprints/Pawns/PlayerPawn"));
 	static ConstructorHelpers::FClassFinder<APawn> CH_AIPawn(TEXT("/Game/Blueprints/Pawns/AIPawn"));
@@ -41,6 +42,6 @@ UClass* AMahjongGameMode::GetDefaultPawnClassForController_Implementation(AContr
 	return Super::GetDefaultPawnClassForController_Implementation(InController);
 }
 
-void AMahjongGameMode::DetermineMatchWinner() {
+void AMahjongGameMode::DetermineGameWinner() {
 	// Do nothing.
 }

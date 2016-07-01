@@ -1,11 +1,15 @@
 // Distributed by Shirasho Media 2016. All rights reserved. Available for distribution under the GNU GENERAL PUBLIC LICENSE v3.
 
 #include "MahjongGame.h"
+#include "MahjongPlayerState.h"
+
 #include "MahjongGameState.h"
 
 
-AMahjongGameState::AMahjongGameState() : Super() {
-	PlayerWind = EMahjongPlayerWind::WIND_NONE;
+AMahjongPlayerState::AMahjongPlayerState(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer) {
+
+	PlayerWind = static_cast<uint8>(EMahjongPlayerWind::WIND_NONE);
 	bQuitter = false;
 }
 
@@ -13,7 +17,7 @@ void AMahjongPlayerState::Reset() {
 
 	Super::Reset();
 
-	PlayerWind = EMahjongPlayerWind::WIND_NONE;
+	PlayerWind = static_cast<uint8>(EMahjongPlayerWind::WIND_NONE);
 	bQuitter = false;
 }
 
@@ -49,7 +53,7 @@ void AMahjongPlayerState::ScoreWin(TArray<TPair<AMahjongPlayerState*, float>> Fr
 		}
 	}
 
-	Score += WinData.Value;
+	Score += ScoreToAdd;
 }
 
 void AMahjongPlayerState::ScoreLoss(AMahjongPlayerState* Player, int32 PointLoss) {
@@ -60,5 +64,5 @@ void AMahjongPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(AShooterPlayerState, PlayerWind);
+	DOREPLIFETIME(AMahjongPlayerState, PlayerWind);
 }

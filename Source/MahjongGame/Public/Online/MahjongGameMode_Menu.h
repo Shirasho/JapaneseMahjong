@@ -7,11 +7,7 @@
 UCLASS()
 class AMahjongGameMode_Menu : public AGameMode {
 	
-	GENERATED_BODY()
-
-protected:
-
-	AMahjongGameMode_Menu();
+	GENERATED_UCLASS_BODY()
 
 public:
 

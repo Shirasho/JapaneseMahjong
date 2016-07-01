@@ -3,8 +3,8 @@
 #include "MahjongGame.h"
 #include "MahjongGameUserSettings.h"
 
-UMahjongGameUserSettings::UMahjongGameUserSettings()
-	: Super()
+UMahjongGameUserSettings::UMahjongGameUserSettings(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
 	SetToDefaults();
 }

@@ -9,13 +9,9 @@
 UCLASS()
 class AMahjongPlayerState : public APlayerState {
 
-	GENERATED_BODY()
+	GENERATED_UCLASS_BODY()
 
-protected:
-
-	AMahjongPlayerState();
-
-private:
+public:
 
 	/** Clear the scores */
 	virtual void Reset() override;
@@ -53,7 +49,7 @@ protected:
 
 	/** The player's wind. */
 	UPROPERTY(Transient, Replicated)
-	EMahjongWindId PlayerWind;
+	uint8 PlayerWind;
 
 	/** Whether the player quit the game. */
 	UPROPERTY()

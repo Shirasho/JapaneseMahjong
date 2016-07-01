@@ -6,7 +6,8 @@
 #include "MahjongPlayerController_Menu.h"
 #include "MahjongGameSession.h"
 
-AMahjongGameMode_Menu::AMahjongGameMode_Menu() : Super() {
+AMahjongGameMode_Menu::AMahjongGameMode_Menu(const FObjectInitializer& ObjectInitializer) 
+	: Super(ObjectInitializer) {
 
 	PlayerControllerClass = AMahjongPlayerController_Menu::StaticClass();
 }

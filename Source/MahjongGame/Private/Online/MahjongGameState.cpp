@@ -4,7 +4,8 @@
 #include "MahjongGameState.h"
 
 
-AMahjongGameState::AMahjongGameState() : Super() {
+AMahjongGameState::AMahjongGameState(const FObjectInitializer& ObjectInitializer) 
+	: Super(ObjectInitializer) {
 
 	RemainingTime = 0;
 	bTimerPaused = false;
@@ -16,5 +17,5 @@ void AMahjongGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > &
 
 	DOREPLIFETIME(AMahjongGameState, RemainingTime);
 	DOREPLIFETIME(AMahjongGameState, bTimerPaused);
-	DOREPLIFETIME(AShooterGameState, TeamScores);
+	DOREPLIFETIME(AMahjongGameState, PlayerScores);
 }

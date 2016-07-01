@@ -2,17 +2,13 @@
 
 #pragma once
 
+#include "MahjongPlayerScoreContainer.h"
 #include "MahjongGameState.generated.h"
-
 
 UCLASS()
 class AMahjongGameState : public AGameState {
 
-	GENERATED_BODY()
-
-protected:
-
-	AMahjongGameState();
+	GENERATED_UCLASS_BODY()
 
 public:
 
@@ -26,5 +22,5 @@ public:
 
 	/** The score of each player. */
 	UPROPERTY(Transient, Replicated)
-	TArray<TPair<class AMahjongPlayerState*, int32>> PlayerScores;
+	TArray<FMahjongPlayerScoreContainer> PlayerScores;
 };

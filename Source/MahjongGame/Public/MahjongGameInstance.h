@@ -17,11 +17,7 @@ namespace MahjongGameInstanceState
 UCLASS(config=Game)
 class UMahjongGameInstance : public UGameInstance
 {
-	GENERATED_BODY()
-
-public:
-
-	UMahjongGameInstance();
+	GENERATED_UCLASS_BODY()
 
 private:
 
@@ -33,5 +29,13 @@ private:
 
 	/** Whether the match is online or not */
 	bool bIsOnline;
+
+public:
+
+	/** Returns true if the game is in online mode */
+	bool GetIsOnline() const { return bIsOnline; }
+
+	/** Sets the online mode of the game */
+	void SetIsOnline(bool bInIsOnline);
 
 };

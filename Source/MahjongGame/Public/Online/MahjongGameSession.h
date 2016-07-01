@@ -10,7 +10,7 @@ struct FMahjongGameSessionParams {
 	/** The name of the session. */
 	FName SessionName;
 	/** Whether the match is a LAN match. */
-	bool bIsLan;
+	bool bIsLAN;
 	/** The Id of the player who initiated the lobby. */
 	TSharedPtr<const FUniqueNetId> UserId;
 	/** The current search result choice to join. */
@@ -26,14 +26,10 @@ struct FMahjongGameSessionParams {
 UCLASS(config=Game)
 class MAHJONGGAME_API AMahjongGameSession : public AGameSession {
 
-	GENERATED_BODY()
-
-protected:
-
-	AMahjongGameSession();
+	GENERATED_UCLASS_BODY()
 
 protected:
 
 	/** Transient properties of a session during game creation/matchmaking */
-	FShooterGameSessionParams CurrentSessionParams;
+	FMahjongGameSessionParams CurrentSessionParams;
 };

@@ -3,6 +3,14 @@
 #pragma once
 
 UENUM(BlueprintType)
+enum class EMahjongGameMode : uint8
+{
+	INVALID = 0,
+	JAPANESE,
+	SOLITAIRE
+};
+
+UENUM(BlueprintType)
 enum class EMahjongTileId : uint8
 {
 	INVALID = 0,
@@ -44,8 +52,8 @@ enum class EMahjongTileId : uint8
 	TILE_ID_MAX
 };
 
-enum class EMahjongWindId : uint8 {
-	WIND_NONE = INDEX_NONE,
+enum class EMahjongPlayerWind : uint8 {
+	WIND_NONE = 0,
 	WIND_TON = EMahjongTileId::WIND_TON,	// East Wind
 	WIND_NAN = EMahjongTileId::WIND_NAN,	// South Wind
 	WIND_SHA = EMahjongTileId::WIND_SHA,	// West Wind

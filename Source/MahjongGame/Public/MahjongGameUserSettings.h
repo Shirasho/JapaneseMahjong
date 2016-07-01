@@ -7,11 +7,9 @@
 UCLASS()
 class UMahjongGameUserSettings : public UGameUserSettings
 {
-	GENERATED_BODY()
+	GENERATED_UCLASS_BODY()
 
 public:
-
-	UMahjongGameUserSettings();
 
 	/** Applies all current user settings to the game and saves to permanent storage (e.g. file), optionally checking for command line overrides. */
 	virtual void ApplySettings(bool bCheckForCommandLineOverrides) override;

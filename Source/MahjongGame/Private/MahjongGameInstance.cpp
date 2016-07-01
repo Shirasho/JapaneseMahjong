@@ -14,7 +14,8 @@ namespace MahjongGameInstanceState
 }
 
 
-UMahjongGameInstance::UMahjongGameInstance() : Super()
+UMahjongGameInstance::UMahjongGameInstance(const FObjectInitializer& ObjectInitializer) 
+	: Super(ObjectInitializer)
 	, bIsOnline(true) // Default to online
 {
 	CurrentState = MahjongGameInstanceState::None;

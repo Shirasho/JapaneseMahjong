@@ -9,11 +9,7 @@ class AMahjongAIController;
 UCLASS(config=Game)
 class AMahjongGameMode : public AGameMode
 {
-	GENERATED_BODY()
-
-protected:
-
-	AMahjongGameMode();
+	GENERATED_UCLASS_BODY()
 	
 protected:
 

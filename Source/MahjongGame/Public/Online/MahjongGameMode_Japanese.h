@@ -10,17 +10,13 @@ class AMahjongPlayerState;
 UCLASS()
 class AMahjongGameMode_Japanese : public AMahjongGameMode {
 
-	GENERATED_BODY()
-
-protected:
-
-	AMahjongGameMode_Japanese();
+	GENERATED_UCLASS_BODY()
 
 protected:
 	
 	/** The player who won the game. */
 	UPROPERTY(transient)
-	AShooterPlayerState* WinnerPlayerState;
+	AMahjongPlayerState* WinnerPlayerState;
 
 	/** Determine who won the game. */
 	virtual void DetermineGameWinner() override;

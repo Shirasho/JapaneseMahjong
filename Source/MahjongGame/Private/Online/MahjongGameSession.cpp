@@ -4,7 +4,9 @@
 #include "MahjongGameSession.h"
 
 
-AMahjongGameSession::AMahjongGameSession() : Super() {
+AMahjongGameSession::AMahjongGameSession(const FObjectInitializer& ObjectInitializer) 
+	: Super(ObjectInitializer) {
+
 	if (!HasAnyFlags(RF_ClassDefaultObject)) {
 
 	}

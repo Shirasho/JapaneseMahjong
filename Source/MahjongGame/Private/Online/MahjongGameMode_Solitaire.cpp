@@ -4,7 +4,8 @@
 #include "MahjongGameMode_Solitaire.h"
 
 
-AMahjongGameMode_Solitaire::AMahjongGameMode_Solitaire() : Super() {
+AMahjongGameMode_Solitaire::AMahjongGameMode_Solitaire(const FObjectInitializer& ObjectInitializer) 
+	: Super(ObjectInitializer) {
 
 	// Whether the game should immediately start when the first player logs in. Affects the default behavior of ReadyToStartMatch.
 	bDelayedStart = true;

@@ -5,14 +5,8 @@
 #include "MahjongGameMode.h"
 #include "MahjongGameMode_Solitaire.generated.h"
 
-class AMahjongPlayerState;
-
 UCLASS()
 class AMahjongGameMode_Solitaire : public AMahjongGameMode {
 
-	GENERATED_BODY()
-
-protected:
-
-	AMahjongGameMode_Solitaire();
+	GENERATED_UCLASS_BODY()
 };
