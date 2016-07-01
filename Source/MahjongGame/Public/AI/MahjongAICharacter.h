@@ -10,6 +10,8 @@ class AMahjongAICharacter : public AMahjongCharacter {
 
 	GENERATED_UCLASS_BODY()
 
+public:
+
 	UPROPERTY(EditAnywhere, Category = Behavior)
 	class UBehaviorTree* AIBehavior;
 

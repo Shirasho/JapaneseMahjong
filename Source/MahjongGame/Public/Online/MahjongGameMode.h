@@ -32,7 +32,7 @@ protected:
 	/* The handle for the DefaultTimer timer. */
 	FTimerHandle TimerHandle_DefaultTimer;
 
-protected:
+public:
 
 	/** Whether to create the exec manager (console command cheats) */
 	virtual bool AllowCheats(APlayerController* P) override;
@@ -45,5 +45,6 @@ protected:
 
 	/** Determine who won the game. */
 	virtual void DetermineGameWinner();
-	
+
+    virtual EMahjongGameMode GetGameMode() const;
 };

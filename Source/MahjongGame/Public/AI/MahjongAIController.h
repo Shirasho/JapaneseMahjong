@@ -12,7 +12,7 @@ class UBlackboardComponent;
 UCLASS(config = Game)
 class AMahjongAIController : public AAIController {
 
-	GENERATED_BODY()
+	GENERATED_UCLASS_BODY()
 
 private:
 

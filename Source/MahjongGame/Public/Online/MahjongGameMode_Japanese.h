@@ -12,7 +12,7 @@ class AMahjongGameMode_Japanese : public AMahjongGameMode {
 
 	GENERATED_UCLASS_BODY()
 
-protected:
+public:
 	
 	/** The player who won the game. */
 	UPROPERTY(transient)
@@ -20,4 +20,6 @@ protected:
 
 	/** Determine who won the game. */
 	virtual void DetermineGameWinner() override;
+
+    EMahjongGameMode GetGameMode() const override;
 };

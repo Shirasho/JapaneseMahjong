@@ -5,6 +5,8 @@
 #include "Engine.h"				// Core Engine
 #include "Net/UnrealNetwork.h"	// Replication
 #include "MahjongTypes.h"		// Commonly-used types
+#include "ParticleDefinitions.h"// Particle systems.
+#include "SoundDefinitions.h"   // Sound systems.
 
 // Log categories
 DECLARE_LOG_CATEGORY_EXTERN(LogMahjong, Log, All);

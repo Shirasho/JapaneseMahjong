@@ -3,6 +3,8 @@
 #include "MahjongGame.h"
 #include "MahjongAICharacter.h"
 #include "MahjongAIController.h"
+#include "BehaviorTree/BehaviorTree.h"  // This shouldn't be necessary...
+#include "BehaviorTree/BlackboardComponent.h" // This shouldn't be necessary...
 
 
 AMahjongAIController::AMahjongAIController(const FObjectInitializer& ObjectInitializer)

@@ -45,6 +45,9 @@ public:
 	//UFUNCTION(Reliable, NetMulticast)
 	//void BroadcastDeath(class AShooterPlayerState* KillerPlayerState, const UDamageType* KillerDamageType, class AShooterPlayerState* KilledPlayerState);
 
+    FORCEINLINE uint8 GetPlayerWind() { return PlayerWind; }
+    FORCEINLINE bool GetQuitter() { return bQuitter; }
+
 protected:
 
 	/** The player's wind. */

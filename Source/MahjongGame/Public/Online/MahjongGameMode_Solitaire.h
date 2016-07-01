@@ -9,4 +9,8 @@ UCLASS()
 class AMahjongGameMode_Solitaire : public AMahjongGameMode {
 
 	GENERATED_UCLASS_BODY()
+
+public:
+
+    EMahjongGameMode GetGameMode() const override;
 };

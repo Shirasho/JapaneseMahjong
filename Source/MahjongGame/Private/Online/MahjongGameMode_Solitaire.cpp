@@ -10,3 +10,8 @@ AMahjongGameMode_Solitaire::AMahjongGameMode_Solitaire(const FObjectInitializer&
 	// Whether the game should immediately start when the first player logs in. Affects the default behavior of ReadyToStartMatch.
 	bDelayedStart = true;
 }
+
+EMahjongGameMode AMahjongGameMode_Solitaire::GetGameMode() const
+{
+    return EMahjongGameMode::SOLITAIRE;
+}

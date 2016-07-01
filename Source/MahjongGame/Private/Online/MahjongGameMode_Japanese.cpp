@@ -13,6 +13,11 @@ AMahjongGameMode_Japanese::AMahjongGameMode_Japanese(const FObjectInitializer& O
 	bDelayedStart = true;
 }
 
+EMahjongGameMode AMahjongGameMode_Japanese::GetGameMode() const
+{
+    return EMahjongGameMode::JAPANESE;
+}
+
 void AMahjongGameMode_Japanese::DetermineGameWinner()
 {
 	const AMahjongGameState* MyGameState = CastChecked<AMahjongGameState>(GameState);

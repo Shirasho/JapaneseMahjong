@@ -3,6 +3,7 @@
 #include "MahjongGame.h"
 #include "MahjongGameMode.h"
 
+#include "MahjongAIController.h"
 #include "MahjongPlayerController.h"
 #include "MahjongPlayerState.h"
 #include "MahjongGameState.h"
@@ -24,6 +25,11 @@ AMahjongGameMode::AMahjongGameMode(const FObjectInitializer& ObjectInitializer)
 	//Spectatorclass = AMahjongSpectatorPawn::StaticClass();
 	GameStateClass = AMahjongGameState::StaticClass();
 	//ReplaySpectatorPlayerControllerClass = AMahjongReplaySpectator::StaticClass();
+}
+
+EMahjongGameMode AMahjongGameMode::GetGameMode() const
+{
+    return EMahjongGameMode::INVALID;
 }
 
 TSubclassOf<AGameSession> AMahjongGameMode::GetGameSessionClass() const

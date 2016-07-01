@@ -20,29 +20,34 @@ void UMahjongSaveGame::SetToDefaults()
 	Gamma = 2.2f;
 }
 
+void UMahjongSaveGame::SetGamma(float InGamma) {
+    bIsDirty |= Gamma != InGamma;
+    Gamma = InGamma;
+}
+
 uint32 UMahjongSaveGame::GetGameScoreAverage(EMahjongGameMode GameMode) const
 {
-	return GameScoreAverage::FindOrAdd(GameMode);
+	return GameScoreAverage.FindRef(GameMode);
 }
 
 uint32 UMahjongSaveGame::GetGameCount(EMahjongGameMode GameMode) const
 {
-	return GameCount::FindOrAdd(GameMode);
+	return GameCount.FindRef(GameMode);
 }
 
 uint32 UMahjongSaveGame::GetGameWins(EMahjongGameMode GameMode) const
 {
-	return GameWins::FindOrAdd(GameMode);
+	return GameWins.FindRef(GameMode);
 }
 
 uint32 UMahjongSaveGame::GetGameLeaves(EMahjongGameMode GameMode) const
 {
-	return GameLeaves::FindOrAdd(GameMode);
+	return GameLeaves.FindRef(GameMode);
 }
 
 float UMahjongSaveGame::GetWinPercentage(EMahjongGameMode GameMode) const
 {
-	return (float)UMathBlueprintLibraray::SetPrecision_Double((double)GetGameWins(GameMode) / (double)GetGameCount(GameMode), 2);
+	return (float)UMathBlueprintLibrary::SetPrecision_Double((double)GetGameWins(GameMode) / (double)GetGameCount(GameMode), 2);
 }
 
 void UMahjongSaveGame::Save()
@@ -60,7 +65,7 @@ UMahjongSaveGame* UMahjongSaveGame::LoadSaveGame(FString SlotName, int32 UserInd
 	// Save games are not valid in this state.
 	if (SlotName.Len() > 0)
 	{
-		Result = Cast<UMahjongSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, UserIndex);
+		Result = Cast<UMahjongSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, UserIndex));
 		if (!Result)
 		{
 			Result = Cast<UMahjongSaveGame>(UGameplayStatics::CreateSaveGameObject(UMahjongSaveGame::StaticClass()));
@@ -108,5 +113,36 @@ void UMahjongSaveGame::AddGameLeave(EMahjongGameMode GameMode)
 
 void UMahjongSaveGame::FetchKeyBindings()
 {
+	TArray<APlayerController*> PlayerList;
+	if (GEngine)
+	{
+		GEngine->GetAllLocalPlayerControllers(PlayerList);
+	}
 
+	for (APlayerController* Controller : PlayerList)
+	{
+		if (!Controller || !Controller->Player || !Controller->PlayerInput)
+		{
+			continue;
+		}
+
+        // Update key bindings for current user only.
+        UMahjongLocalPlayer* LocalPlayer = Cast<UMahjongLocalPlayer>(Controller->Player);
+        if (!LocalPlayer || LocalPlayer->GetSaveGame() != this)
+        {
+            continue;
+        }
+
+        // Update bindings.
+        /*int32 AxisMapCount = Controller->PlayerInput->AxisMappings.Num();
+        for (int32 AxisMapIndex = 0; AxisMapIndex < AxisMapCount; ++AxisMapIndex)
+        {
+            FInputAxisKeyMapping& AxisMapping = PC->PlayerInput->AxisMappings[AxisMapIndex];
+            if (AxisMapping.AxisName == "")
+            {
+                AxisMapping.Scale = 1;
+            }
+        }
+        Controller->PlayerInput->ForceRebuildingKeyMaps();*/
+	}
 }
