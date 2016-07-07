@@ -12,6 +12,11 @@ class AMahjongGameMode_Japanese : public AMahjongGameMode {
 
 	GENERATED_UCLASS_BODY()
 
+protected:
+
+    //UPROPERTY(transient)
+    //UMahjongDeck* MahjongDeck;
+
 public:
 	
 	/** The player who won the game. */
@@ -22,4 +27,15 @@ public:
 	virtual void DetermineGameWinner() override;
 
     EMahjongGameMode GetGameMode() const override;
+
+    //FORCEINLINE const UMahjongDeck* GetMahjongDeck() const { return MahjongDeck; }
+
+protected:
+
+    virtual bool IsWinner(class AMahjongPlayerState* PlayerState) const override;
+
+public:
+
+    /** Returns the game session class to use. */
+    virtual TSubclassOf<AGameSession> GetGameSessionClass() const override;
 };

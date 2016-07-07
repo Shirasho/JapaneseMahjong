@@ -10,8 +10,6 @@
 #include "MahjongLocalPlayer.h"
 #include "MahjongSaveGame.h"
 
-#include "Online.h"
-
 
 AMahjongPlayerController::AMahjongPlayerController(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -338,5 +336,32 @@ void AMahjongPlayerController::UpdateSaveFileOnGameEnd(bool bIsWinner)
             SaveGame->AddGameResult(EMahjongGameMode::INVALID, MahjongPlayerState->GetScore(), bIsWinner);
             SaveGame->SaveIfDirty();
         }
+    }
+}
+
+bool AMahjongPlayerController::IsGameMenuVisible() const
+{
+    bool Result = false;
+    /*if (MahjongIngameMenu.IsValid())
+    {
+        Result = MahjongIngameMenu->GetIsGameMenuUp();
+    }*/
+
+    return Result;
+}
+
+void AMahjongPlayerController::ReturnToMainMenu()
+{
+    //@TODO OnHideScoreboard();
+    CleanupSessionOnReturnToMenu();
+}
+
+void AMahjongPlayerController::CleanupSessionOnReturnToMenu()
+{
+    UMahjongGameInstance * GameInstance = GetWorld() ? Cast<UMahjongGameInstance>(GetWorld()->GetGameInstance()) : nullptr;
+
+    if (ensure(GameInstance))
+    {
+        GameInstance->CleanupSessionOnReturnToMenu();
     }
 }

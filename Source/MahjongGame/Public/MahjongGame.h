@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Engine.h"				// Core Engine
+#include "Online.h"             // Online
 #include "Net/UnrealNetwork.h"	// Replication
 #include "MahjongTypes.h"		// Commonly-used types
 #include "ParticleDefinitions.h"// Particle systems.

@@ -1,1 +1,2 @@
-- With the update in MahjongGameState to the PlayerScores container, the class that references it will need updating to reflect this change.
+- With the update in MahjongGameState to the PlayerScores container, the class that references it (GameMode iirc) will need updating to reflect this change.
+- Do research into method replication and if (Role == ROLE_Authority) {}.

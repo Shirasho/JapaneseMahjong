@@ -23,4 +23,6 @@ public:
 	/** The score of each player. */
 	UPROPERTY(Transient, Replicated)
 	TArray<FMahjongPlayerScoreContainer> PlayerScores;
+
+    void RequestFinishAndExitToMainMenu();
 };

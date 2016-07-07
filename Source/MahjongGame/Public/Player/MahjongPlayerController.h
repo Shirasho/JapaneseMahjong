@@ -52,20 +52,35 @@ public:
 	UFUNCTION(reliable, client)
 	void ClientSendRoundEndEvent(bool bIsWinner, int32 ExpendedTimeInSeconds);
 
-	/** sends cheat message */
-	UFUNCTION(reliable, server, WithValidation)
-	void ServerCheat(const FString& Message);
+    /* Overriden Message implementation. */
+    virtual void ClientTeamMessage_Implementation(APlayerState* SenderPlayerState, const FString& Message, FName Type, float MsgLifeTime) override;
 
-	/* Overriden Message implementation. */
-	virtual void ClientTeamMessage_Implementation(APlayerState* SenderPlayerState, const FString& Message, FName Type, float MsgLifeTime) override;
+
+
+    /** sends cheat message */
+    UFUNCTION(reliable, server, WithValidation)
+    void ServerCheat(const FString& Message);
+
+    /** RPC for clients to talk to server */
+    UFUNCTION(unreliable, server, WithValidation)
+    void ServerSay(const FString& Message);
+
+
+
+    /** is game menu currently active? */
+    bool IsGameMenuVisible() const;
+
+    /** Ends and/or destroys game session */
+    void CleanupSessionOnReturnToMenu();
+
+    /** Cleans up any resources necessary to return to main menu.  Does not modify GameInstance state. */
+    virtual void ReturnToMainMenu();
 
 	/** Local function say a string */
 	UFUNCTION(exec)
 	virtual void Say(const FString& Message);
 
-	/** RPC for clients to talk to server */
-	UFUNCTION(unreliable, server, WithValidation)
-	void ServerSay(const FString& Message);
+	
 
 	/** check if gameplay related actions (movement, weapon usage, etc) are allowed right now */
 	bool IsGameInputAllowed() const;

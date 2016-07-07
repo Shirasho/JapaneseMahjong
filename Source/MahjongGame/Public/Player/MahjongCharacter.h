@@ -62,6 +62,9 @@ public:
 
     /** Stop playing all montages */
     void StopAllAnimMontages();
+
+    /** Kill this pawn */
+    virtual void KilledBy(class APawn* EventInstigator);
     
 
     /** Setup pawn specific input handlers */

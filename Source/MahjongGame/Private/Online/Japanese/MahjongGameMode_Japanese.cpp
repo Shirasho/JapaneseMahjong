@@ -3,19 +3,36 @@
 #include "MahjongGame.h"
 #include "MahjongGameMode_Japanese.h"
 
+#include "MahjongPlayerState.h"
 #include "MahjongGameState.h"
+#include "MahjongGameSession_Japanese.h"
 
 
 AMahjongGameMode_Japanese::AMahjongGameMode_Japanese(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	// Whether the game should immediately start when the first player logs in. Affects the default behavior of ReadyToStartMatch.
-	bDelayedStart = true;
+    //static ConstructorHelpers::FClassFinder<APawn> CH_PlayerPawn(TEXT("/Game/Blueprints/Pawns/PlayerPawn"));
+    //static ConstructorHelpers::FClassFinder<APawn> CH_AIPawn(TEXT("/Game/Blueprints/Pawns/AIPawn"));
+
+    //@TODO
+    //DefaultPawnClass = CH_PlayerPawn.Class;
+    //AIPawnClass = CH_AIPawn.Class;
+    //HUDClass = AMahjongHUD::StaticClass();
+    //PlayerControllerClass = AMahjongPlayerController::StaticClass();
+    //PlayerStateClass = AMahjongPlayerState::StaticClass();
+    //Spectatorclass = AMahjongSpectatorPawn::StaticClass();
+    //GameStateClass = AMahjongGameState::StaticClass();
+    //ReplaySpectatorPlayerControllerClass = AMahjongReplaySpectator::StaticClass();
 }
 
 EMahjongGameMode AMahjongGameMode_Japanese::GetGameMode() const
 {
     return EMahjongGameMode::JAPANESE;
+}
+
+TSubclassOf<AGameSession> AMahjongGameMode_Japanese::GetGameSessionClass() const
+{
+    return AMahjongGameSession_Japanese::StaticClass();
 }
 
 void AMahjongGameMode_Japanese::DetermineGameWinner()
@@ -42,4 +59,9 @@ void AMahjongGameMode_Japanese::DetermineGameWinner()
 
 	check(BestPlayer != -1);
 	WinnerPlayerState = Cast<AMahjongPlayerState>(MyGameState->PlayerArray[BestPlayer]);
+}
+
+bool AMahjongGameMode_Japanese::IsWinner(AMahjongPlayerState* PlayerState) const
+{
+    return PlayerState && !PlayerState->IsQuitter() && PlayerState == WinnerPlayerState;
 }

@@ -21,9 +21,9 @@ protected:
 	UPROPERTY(config)
 	int32 PlayerTurnTime;
 
-	//@TODO
-	// This is where we would store the scores for each thing. This means we would probably
-	// want to create a TMap that stores a hand and a han value.
+    //@TODO
+    // This is where we would store the scores for each thing. This means we would probably
+    // want to create a TMap that stores a hand and a han value.
 
 	/** The array of active AI controllers. */
 	UPROPERTY()
@@ -33,6 +33,8 @@ protected:
 	FTimerHandle TimerHandle_DefaultTimer;
 
 public:
+    
+    /* ## AGameMode Interface ## */
 
 	/** Whether to create the exec manager (console command cheats) */
 	virtual bool AllowCheats(APlayerController* P) override;
@@ -43,8 +45,27 @@ public:
 	/** Returns default pawn class for given controller */
 	virtual UClass* GetDefaultPawnClassForController_Implementation(AController* InController) override;
 
+public:
+
+    /* ## AMahjongGameMode ## */
+
 	/** Determine who won the game. */
 	virtual void DetermineGameWinner();
+
+    /* Finish the game. */
+    virtual void FinishGame();
+
+    /* Finish the game and bump everyone to main menu.*/
+    /* Only GameInstance should call this function. */
+    void RequestFinishAndExitToMainMenu();
+
+protected:
+
+    virtual bool IsWinner(class AMahjongPlayerState* PlayerState) const;
+
+public:
+
+    /* ## Getters and Setters ## */
 
     virtual EMahjongGameMode GetGameMode() const;
 };

@@ -4,6 +4,7 @@
 #include "MahjongCharacter.h"
 
 #include "MahjongPlayerState.h"
+#include "MahjongGameMode.h"
 
 
 AMahjongCharacter::AMahjongCharacter(const FObjectInitializer& ObjectInitializer)
@@ -242,4 +243,38 @@ USkeletalMeshComponent* AMahjongCharacter::GetSpecificPawnMesh(bool WantFirstPer
 bool AMahjongCharacter::IsFirstPerson() const
 {
     return Controller && Controller->IsLocalPlayerController();
+}
+
+void AMahjongCharacter::KilledBy(APawn* EventInstigator)
+{
+    if (Role == ROLE_Authority)
+    {
+        AController* Killer = nullptr;
+        if (EventInstigator)
+        {
+            Killer = EventInstigator->Controller;
+            LastHitBy = nullptr;
+        }
+
+        if (!IsPendingKill()
+            && Role == ROLE_Authority
+            && GetWorld()->GetAuthGameMode() != nullptr
+            && GetWorld()->GetAuthGameMode()->GetMatchState() != MatchState::LeavingMap)
+        {
+            // If we want to inform the game mode about the destruction of this character
+            // we can do it here.
+
+            //GetWorld()->GetAuthGameMode<AMahjongGameMode>()->Killed(this);
+
+            // Make it look like the item hasn't updated in a long time.
+            NetUpdateFrequency = GetDefault<AMahjongCharacter>()->NetUpdateFrequency;
+
+            UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
+            if (MovementComponent)
+            {
+                // Force a replication update.
+                MovementComponent->ForceReplicationUpdate();
+            }
+        }
+    }
 }

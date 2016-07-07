@@ -3,12 +3,49 @@
 #include "MahjongGame.h"
 #include "MahjongGameState.h"
 
+#include "MahjongGameMode.h"
+#include "MahjongGameInstance.h"
+#include "MahjongPlayerController.h"
+
 
 AMahjongGameState::AMahjongGameState(const FObjectInitializer& ObjectInitializer) 
 	: Super(ObjectInitializer)
 {
 	RemainingTime = 0;
 	bTimerPaused = false;
+}
+
+void AMahjongGameState::RequestFinishAndExitToMainMenu()
+{
+    if (AuthorityGameMode)
+    {
+        // We are the server with access to the GameMode.
+        AMahjongGameMode* GameMode = Cast<AMahjongGameMode>(AuthorityGameMode);
+        if (GameMode)
+        {
+            GameMode->RequestFinishAndExitToMainMenu();
+        }
+    }
+    else
+    {
+        // We are a client with no access to GameMode. Just handle our own business.
+        UMahjongGameInstance* GameInstance = Cast<UMahjongGameInstance>(GetGameInstance());
+        if (GameInstance)
+        {
+            //@TODO For now we do not have split screen (due to the nature of Mahjong),
+            // but if we did it would need to be removed here.
+            
+            //GameInstance->RemoveSplitScreenPlayers();
+        }
+
+        AMahjongPlayerController* PlayerController = Cast<AMahjongPlayerController>(GetGameInstance()->GetFirstLocalPlayerController());
+        if (PlayerController)
+        {
+            // Safety check to ensure this is only being hit by the clients.
+            check(PlayerController->GetNetMode() == ENetMode::NM_Client);
+            PlayerController->ReturnToMainMenu();
+        }
+    }
 }
 
 void AMahjongGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const

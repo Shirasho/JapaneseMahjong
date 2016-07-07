@@ -35,7 +35,29 @@ PlayerState
   would go here. PlayerState is replicated.
 
 PlayerController
-- A client version of PlayerState. The exact differences need to be explored.
+- Controls a PlayerCharacter. The server and client each have their own PlayerControllers.
+  PlayerControllers are NOT replicated.
+
+# PlayerState contains replicated data about the overall player. The PlayerController contains
+  data about the character. Taking an MOBA as a example, the following states would be stored
+  in their respective classes. With this said, it is probably better to store the Unit data
+  in the PlayerCharacter instead of the PlayerController since (I THINK) the PlayerCharacter
+  actually supports replication.
+
+PlayerState:
+  Player experience
+  Player level
+  Player champion class
+  Unit inventory
+
+PlayerController
+  Unit health
+  Unit damage
+  Unit stats
+
+## In the case of our Mahjong game, the single PlayerController will persist from start to finish,
+   but it will still likely be better to place everything in the PlayerState since this object
+   is replicated and lasts exactly one game duration.
 
 LocalPlayer
 - Exists for every client. Basically "the user". Contains an instance of the user's save
