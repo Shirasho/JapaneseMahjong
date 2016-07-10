@@ -6,6 +6,7 @@
 #include "MahjongPlayerCameraManager.h"
 #include "MahjongExec.h"
 #include "MahjongGameInstance.h"
+#include "MahjongGameViewportClient.h"
 #include "MahjongPlayerState.h"
 #include "MahjongLocalPlayer.h"
 #include "MahjongSaveGame.h"
@@ -342,6 +343,7 @@ void AMahjongPlayerController::UpdateSaveFileOnGameEnd(bool bIsWinner)
 bool AMahjongPlayerController::IsGameMenuVisible() const
 {
     bool Result = false;
+    //@TODO
     /*if (MahjongIngameMenu.IsValid())
     {
         Result = MahjongIngameMenu->GetIsGameMenuUp();

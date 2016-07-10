@@ -1,6 +1,16 @@
 // Distributed by Shirasho Media 2016. All rights reserved. Available for distribution under the GNU GENERAL PUBLIC LICENSE v3.
 
+#pragma once
+
+#include "MahjongPendingMessage.h"
+#include "MahjongPendingInvite.h"
 #include "MahjongGameInstance.generated.h"
+
+class FMahjongMainMenu;
+class FMahjongWelcomeMenu;
+class FMahjongMessageMenu;
+
+class SMahjongWaitWidget;
 
 class AMahjongGameSession;
 
@@ -14,27 +24,6 @@ namespace MahjongGameInstanceState
     extern const FName Playing;
 }
 
-class FMahjongPendingMessage
-{
-public:
-    FText	DisplayString;				// This is the display message in the main message body
-    FText	OKButtonString;				// This is the ok button text
-    FText	CancelButtonString;			// If this is not empty, it will be the cancel button text
-    FName	NextState;					// Final destination state once message is discarded
-
-    TWeakObjectPtr< ULocalPlayer > PlayerOwner;		// Owner of dialog who will have focus (can be NULL)
-};
-
-class FMahjongPendingInvite
-{
-public:
-    FMahjongPendingInvite() : ControllerId(-1), UserId(nullptr), bPrivilegesCheckedAndAllowed(false) {}
-
-    int32							 ControllerId;
-    TSharedPtr< const FUniqueNetId > UserId;
-    FOnlineSessionSearchResult 		 InviteResult;
-    bool							 bPrivilegesCheckedAndAllowed;
-};
 
 UCLASS(config = Game)
 class UMahjongGameInstance : public UGameInstance
@@ -67,6 +56,20 @@ private:
     /** Whether the user has an active license to play the game */
     bool bIsLicensed;
 
+
+    /** Main menu UI */
+    TSharedPtr<FMahjongMainMenu> MainMenu;
+
+    /** Message menu (Shown in the even of errors - unable to connect etc) */
+    TSharedPtr<FMahjongMessageMenu> MessageMenu;
+
+    /** Welcome menu UI (for consoles) */
+    TSharedPtr<FMahjongWelcomeMenu> WelcomeMenu;
+
+    /** Dialog widget to show non-interactive waiting messages for network timeouts and such. */
+    TSharedPtr<SMahjongWaitWidget> WaitMessageWidget;
+
+
     /** Controller to ignore for pairing changes. -1 to skip ignore. */
     int32 IgnorePairingChangeForControllerId;
 
@@ -98,6 +101,8 @@ private:
     /** Welcome menu UI (for consoles) */
     //TSharedPtr<FMahjongWelcomeMenu> WelcomeMenuUI;
 
+    FStreamableManager AssetLoader;
+
 public:
 
     bool Tick(float DeltaSeconds);
@@ -106,6 +111,8 @@ public:
 
     /** Returns true if the game is in online mode */
     FORCEINLINE bool GetIsOnline() const { return bIsOnline; }
+
+    FORCEINLINE FStreamableManager& GetAssetLoader() { return AssetLoader; }
 
     /** Sets the online mode of the game */
     void SetIsOnline(bool bInIsOnline);

@@ -6,11 +6,19 @@
 #include "OnlineDefinitions.h"
 #include "GUIDefinitions.h"
 
+#include "MahjongMainMenu.h"
+#include "MahjongMessageMenu.h"
+#include "MahjongWelcomeMenu.h"
+#include "SMahjongWaitWidget.h"
+
 #include "MahjongGameState.h"
 #include "MahjongGameSession.h"
+#include "MahjongGameViewportClient.h"
 #include "MahjongCharacter.h"
 #include "MahjongPlayerController.h"
 #include "MahjongPlayerController_Menu.h"
+
+//#include "MahjongConfirmationDialog.h"
 
 namespace MahjongGameInstanceState
 {
@@ -183,14 +191,12 @@ void UMahjongGameInstance::OnPreLoadMap()
 
 void UMahjongGameInstance::OnPostLoadMap()
 {
-    // Make sure we hide the loading screen when the level is done loading
-    //@TODO
-    /*UMahjongGameViewportClient* MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
+    UMahjongGameViewportClient* MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
 
     if (MahjongViewport != nullptr)
     {
         MahjongViewport->HideLoadingScreen();
-    }*/
+    }
 }
 
 void UMahjongGameInstance::OnUserCanPlayInvite(const FUniqueNetId& UserId, EUserPrivileges::Type Privilege, uint32 PrivilegeResults)
@@ -349,13 +355,14 @@ void UMahjongGameInstance::ShowLoadingScreen()
     {
         LoadingScreenModule->StartInGameLoadingScreen();
     }
+    */
 
     UMahjongGameViewportClient* MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
 
     if (MahjongViewport != nullptr)
     {
         MahjongViewport->ShowLoadingScreen();
-    }*/
+    }
 }
 
 bool UMahjongGameInstance::LoadFrontEndMap(const FString& MapName)
@@ -542,11 +549,12 @@ void UMahjongGameInstance::BeginWelcomeScreenState()
 
     ULocalPlayer* const LocalPlayer = GetFirstGamePlayer();
     LocalPlayer->SetCachedUniqueNetId(nullptr);
+
     //@TODO
-    //check(!WelcomeMenuUI.IsValid());
-    //WelcomeMenuUI = MakeShareable(new FMahjongWelcomeMenu);
-    //WelcomeMenuUI->Construct(this);
-    //WelcomeMenuUI->AddToGameViewport();
+    /*check(!WelcomeMenuUI.IsValid());
+    WelcomeMenuUI = MakeShareable(new FMahjongWelcomeMenu);
+    WelcomeMenuUI->Construct(this);
+    WelcomeMenuUI->AddToGameViewport();*/
 
     // Disallow splitscreen (we will allow while in the playing state)
     GetGameViewportClient()->SetDisableSplitscreenOverride(true);
@@ -585,13 +593,12 @@ void UMahjongGameInstance::SetPresenceForLocalPlayers(const FVariantData& Presen
 void UMahjongGameInstance::BeginMainMenuState()
 {
     // Make sure we're not showing the loadscreen
-    //@TODO
-    /*UMahjongGameViewportClient* MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
+    UMahjongGameViewportClient* MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
 
     if (MahjongViewport)
     {
         MahjongViewport->HideLoadingScreen();
-    }*/
+    }
 
     SetIsOnline(false);
 
@@ -652,18 +659,18 @@ void UMahjongGameInstance::BeginMessageMenuState()
     }
 
     // Make sure we're not showing the loadscreen
-    //@TODO
-    /*UMahjongGameViewportClient* MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
+    UMahjongGameViewportClient* MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
 
     if (MahjongViewport != nullptr)
     {
         MahjongViewport->HideLoadingScreen();
     }
 
-    check(!MessageMenuUI.IsValid());
+    //@TODO
+    /*check(!MessageMenuUI.IsValid());
     MessageMenuUI = MakeShareable(new FMahjongMessageMenu);
-    MessageMenuUI->Construct(this, PendingMessage.PlayerOwner, PendingMessage.DisplayString, PendingMessage.OKButtonString, PendingMessage.CancelButtonString, PendingMessage.NextState);
-    */
+    MessageMenuUI->Construct(this, PendingMessage.PlayerOwner, PendingMessage.DisplayString, PendingMessage.OKButtonString, PendingMessage.CancelButtonString, PendingMessage.NextState);*/
+    
     PendingMessage.DisplayString = FText::GetEmpty();
 }
 
@@ -679,6 +686,7 @@ void UMahjongGameInstance::EndMessageMenuState()
 
 void UMahjongGameInstance::BeginPlayingState()
 {
+    //@TODO
     //bPendingEnableSplitscreen = true;
 
     // Set presence for playing in a map
@@ -1079,15 +1087,12 @@ bool UMahjongGameInstance::Tick(float DeltaSeconds)
 
     MaybeChangeState();
 
-    //@TODO
-    //UMahjongGameViewportClient* MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
+    UMahjongGameViewportClient* MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
 
     if (CurrentState != MahjongGameInstanceState::WelcomeScreen)
     {
         // If at any point we aren't licensed (but we are after welcome screen) bounce them back to the welcome screen
-        //@TODO
-        //if (MAHJONG_REQUIRE_OSS && !bIsLicensed && CurrentState != MahjongGameInstanceState::None && !MahjongViewport->IsShowingDialog())
-        if (false)
+        if (MAHJONG_REQUIRE_OSS && !bIsLicensed && CurrentState != MahjongGameInstanceState::None && !MahjongViewport->IsShowingDialog())
         {
             const FText ReturnReason = NSLOCTEXT("ProfileMessages", "NeedLicense", "The signed in users do not have a license for this game. Please purchase this game from the platform Marketplace or sign in a user with a valid license.");
             const FText OKButton = NSLOCTEXT("DialogButtons", "OKAY", "OK");
@@ -1096,16 +1101,13 @@ bool UMahjongGameInstance::Tick(float DeltaSeconds)
         }
 
         // Show controller disconnected dialog if any local players have an invalid controller
-        //@TODO
-        //if (MahjongViewport && !MahjongViewport->IsShowingDialog())
-        if (false)
+        if (MahjongViewport && !MahjongViewport->IsShowingDialog())
         {
             for (int i = 0; i < LocalPlayers.Num(); ++i)
             {
                 if (LocalPlayers[i] && LocalPlayers[i]->GetControllerId() == -1)
                 {
-                    //@TODO
-                    /*MahjongViewport->ShowDialog(
+                    MahjongViewport->ShowDialog(
                         LocalPlayers[i],
                         EMahjongDialogType::ControllerDisconnected,
                         FText::Format(NSLOCTEXT("ProfileMessages", "PlayerReconnectControllerFmt", "Player {0}, please reconnect your controller."), FText::AsNumber(i + 1)),
@@ -1117,7 +1119,7 @@ bool UMahjongGameInstance::Tick(float DeltaSeconds)
                         FText::GetEmpty(),
                         FOnClicked::CreateUObject(this, &UMahjongGameInstance::OnControllerReconnectConfirm),
                         FOnClicked()
-                    );*/
+                    );
                 }
             }
         }
@@ -1324,13 +1326,12 @@ void UMahjongGameInstance::RemoveExistingLocalPlayer(ULocalPlayer* ExistingPlaye
 FReply UMahjongGameInstance::OnPairingUsePreviousProfile()
 {
     // Do nothing (except hide the message) if they want to continue using previous profile
-    //@TODO
-    /*UMahjongGameViewportClient* MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
+    UMahjongGameViewportClient* MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
 
     if (MahjongViewport != nullptr)
     {
         MahjongViewport->HideDialog();
-    }*/
+    }
 
     return FReply::Handled();
 }
@@ -1432,12 +1433,11 @@ void UMahjongGameInstance::HandleControllerConnectionChange(bool bIsConnection, 
 
 FReply UMahjongGameInstance::OnControllerReconnectConfirm()
 {
-    //@TODO
-    /*UMahjongGameViewportClient* MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
+    UMahjongGameViewportClient* MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
     if (MahjongViewport)
     {
         MahjongViewport->HideDialog();
-    }*/
+    }
 
     return FReply::Handled();
 }
@@ -1522,8 +1522,7 @@ bool UMahjongGameInstance::IsLocalPlayerOnline(ULocalPlayer* LocalPlayer)
 bool UMahjongGameInstance::ValidatePlayerForOnlinePlay(ULocalPlayer* LocalPlayer)
 {
     // Get the viewport
-    //@TODO
-    //UMahjongGameViewportClient* MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
+    UMahjongGameViewportClient* MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
 
 #if PLATFORM_XBOXONE
     if (CurrentConnectionStatus != EOnlineServerConnectionStatus::Connected)
@@ -1553,14 +1552,12 @@ bool UMahjongGameInstance::ValidatePlayerForOnlinePlay(ULocalPlayer* LocalPlayer
     {
         // Don't let them play online if they aren't online
         
-        //@TODO
-        //if (MahjongViewport)
-        if (false)
+        if (MahjongViewport)
         {
             const FText Msg = NSLOCTEXT("NetworkFailures", "MustBeSignedIn", "You must be signed in to play online");
             const FText OKButtonString = NSLOCTEXT("DialogButtons", "OKAY", "OK");
 
-            /*MahjongViewport->ShowDialog(
+            MahjongViewport->ShowDialog(
                 nullptr,
                 EMahjongDialogType::Generic,
                 Msg,
@@ -1568,7 +1565,7 @@ bool UMahjongGameInstance::ValidatePlayerForOnlinePlay(ULocalPlayer* LocalPlayer
                 FText::GetEmpty(),
                 FOnClicked::CreateUObject(this, &UMahjongGameInstance::OnConfirmGeneric),
                 FOnClicked::CreateUObject(this, &UMahjongGameInstance::OnConfirmGeneric)
-            );*/
+            );
         }
 
         return false;
@@ -1579,12 +1576,11 @@ bool UMahjongGameInstance::ValidatePlayerForOnlinePlay(ULocalPlayer* LocalPlayer
 
 FReply UMahjongGameInstance::OnConfirmGeneric()
 {
-    //@TODO
-    /*UMahjongGameViewportClient* MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
+    UMahjongGameViewportClient* MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
     if (MahjongViewport)
     {
         MahjongViewport->HideDialog();
-    }*/
+    }
 
     return FReply::Handled();
 }
@@ -1617,18 +1613,18 @@ void UMahjongGameInstance::StartOnlinePrivilegeTask(const IOnlineIdentity::FOnGe
 void UMahjongGameInstance::CleanupOnlinePrivilegeTask()
 {
     //@TODO
-    /*if (GEngine && GEngine->GameViewport && WaitMessageWidget.IsValid())
+    //if (GEngine && GEngine->GameViewport && WaitMessageWidget.IsValid())
     {
         UGameViewportClient* const GVC = GEngine->GameViewport;
-        GVC->RemoveViewportWidgetContent(WaitMessageWidget.ToSharedRef());
-    }*/
+        //@TODO
+        //GVC->RemoveViewportWidgetContent(WaitMessageWidget.ToSharedRef());
+    }
 }
 
 void UMahjongGameInstance::DisplayOnlinePrivilegeFailureDialogs(const FUniqueNetId& UserId, EUserPrivileges::Type Privilege, uint32 PrivilegeResults)
 {
     // Show warning that the user cannot play due to age restrictions
-    //@TODO
-    //UMahjongGameViewportClient* MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
+    UMahjongGameViewportClient* MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
     TWeakObjectPtr<ULocalPlayer> OwningPlayer;
     if (GEngine)
     {
@@ -1645,10 +1641,7 @@ void UMahjongGameInstance::DisplayOnlinePrivilegeFailureDialogs(const FUniqueNet
         }
     }
 
-
-    //@TODO
-    //if (MahjongViewport != nullptr && OwningPlayer.IsValid())
-    if (OwningPlayer.IsValid())
+    if (MahjongViewport && OwningPlayer.IsValid())
     {
         if ((PrivilegeResults & (uint32)IOnlineIdentity::EPrivilegeResults::AccountTypeFailure) != 0)
         {
@@ -1660,8 +1653,7 @@ void UMahjongGameInstance::DisplayOnlinePrivilegeFailureDialogs(const FUniqueNet
         }
         else if ((PrivilegeResults & (uint32)IOnlineIdentity::EPrivilegeResults::RequiredSystemUpdate) != 0)
         {
-            //@TODO
-            /*MahjongViewport->ShowDialog(
+            MahjongViewport->ShowDialog(
                 OwningPlayer.Get(),
                 EMahjongDialogType::Generic,
                 NSLOCTEXT("OnlinePrivilegeResult", "RequiredSystemUpdate", "A required system update is available.  Please upgrade to access online features."),
@@ -1669,12 +1661,11 @@ void UMahjongGameInstance::DisplayOnlinePrivilegeFailureDialogs(const FUniqueNet
                 FText::GetEmpty(),
                 FOnClicked::CreateUObject(this, &UMahjongGameInstance::OnConfirmGeneric),
                 FOnClicked::CreateUObject(this, &UMahjongGameInstance::OnConfirmGeneric)
-            );*/
+            );
         }
         else if ((PrivilegeResults & (uint32)IOnlineIdentity::EPrivilegeResults::RequiredPatchAvailable) != 0)
         {
-            //@TODO
-            /*MahjongViewport->ShowDialog(
+            MahjongViewport->ShowDialog(
                 OwningPlayer.Get(),
                 EMahjongDialogType::Generic,
                 NSLOCTEXT("OnlinePrivilegeResult", "RequiredPatchAvailable", "A required game patch is available.  Please upgrade to access online features."),
@@ -1682,12 +1673,11 @@ void UMahjongGameInstance::DisplayOnlinePrivilegeFailureDialogs(const FUniqueNet
                 FText::GetEmpty(),
                 FOnClicked::CreateUObject(this, &UMahjongGameInstance::OnConfirmGeneric),
                 FOnClicked::CreateUObject(this, &UMahjongGameInstance::OnConfirmGeneric)
-            );*/
+            );
         }
         else if ((PrivilegeResults & (uint32)IOnlineIdentity::EPrivilegeResults::AgeRestrictionFailure) != 0)
         {
-            //@TODO
-            /*MahjongViewport->ShowDialog(
+            MahjongViewport->ShowDialog(
                 OwningPlayer.Get(),
                 EMahjongDialogType::Generic,
                 NSLOCTEXT("OnlinePrivilegeResult", "AgeRestrictionFailure", "Cannot play due to age restrictions!"),
@@ -1695,12 +1685,11 @@ void UMahjongGameInstance::DisplayOnlinePrivilegeFailureDialogs(const FUniqueNet
                 FText::GetEmpty(),
                 FOnClicked::CreateUObject(this, &UMahjongGameInstance::OnConfirmGeneric),
                 FOnClicked::CreateUObject(this, &UMahjongGameInstance::OnConfirmGeneric)
-            );*/
+            );
         }
         else if ((PrivilegeResults & (uint32)IOnlineIdentity::EPrivilegeResults::UserNotFound) != 0)
         {
-            //@TODO
-            /*MahjongViewport->ShowDialog(
+            MahjongViewport->ShowDialog(
                 OwningPlayer.Get(),
                 EMahjongDialogType::Generic,
                 NSLOCTEXT("OnlinePrivilegeResult", "UserNotFound", "Cannot play due invalid user!"),
@@ -1708,12 +1697,11 @@ void UMahjongGameInstance::DisplayOnlinePrivilegeFailureDialogs(const FUniqueNet
                 FText::GetEmpty(),
                 FOnClicked::CreateUObject(this, &UMahjongGameInstance::OnConfirmGeneric),
                 FOnClicked::CreateUObject(this, &UMahjongGameInstance::OnConfirmGeneric)
-            );*/
+            );
         }
         else if ((PrivilegeResults & (uint32)IOnlineIdentity::EPrivilegeResults::GenericFailure) != 0)
         {
-            //@TODO
-            /*MahjongViewport->ShowDialog(
+            MahjongViewport->ShowDialog(
                 OwningPlayer.Get(),
                 EMahjongDialogType::Generic,
                 NSLOCTEXT("OnlinePrivilegeResult", "GenericFailure", "Cannot play online.  Check your network connection."),
@@ -1721,7 +1709,7 @@ void UMahjongGameInstance::DisplayOnlinePrivilegeFailureDialogs(const FUniqueNet
                 FText::GetEmpty(),
                 FOnClicked::CreateUObject(this, &UMahjongGameInstance::OnConfirmGeneric),
                 FOnClicked::CreateUObject(this, &UMahjongGameInstance::OnConfirmGeneric)
-            );*/
+            );
         }
     }
 }

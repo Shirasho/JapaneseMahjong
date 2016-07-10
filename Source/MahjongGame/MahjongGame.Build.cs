@@ -15,7 +15,9 @@ public class MahjongGame : ModuleRules
         });
 
         PrivateIncludePaths.AddRange(new string[] {
-
+            "MahjongGame/Private/GUI",
+            "MahjongGame/Private/GUI/Menus",
+            "MahjongGame/Private/GUI/Widgets"
         });
 
         PrivateIncludePathModuleNames.AddRange(new string[] {
@@ -31,12 +33,13 @@ public class MahjongGame : ModuleRules
             "AssetRegistry",
             "AIModule",
             "GameplayTasks",
+            "Slate",
+            "SlateCore",
+            "UMG"
         });
         
 		PrivateDependencyModuleNames.AddRange(new string[] {
             "InputCore",
-            "Slate",
-            "SlateCore",
             //"MahjongGameLoadingScreen",
             "Json",
             "OnlineSubsystem"
