@@ -16,7 +16,9 @@ public class MahjongGame : ModuleRules
 
         PrivateIncludePaths.AddRange(new string[] {
             "MahjongGame/Private/GUI",
+            "MahjongGame/Private/GUI/Brushes",
             "MahjongGame/Private/GUI/Menus",
+            "MahjongGame/Private/GUI/Styles",
             "MahjongGame/Private/GUI/Widgets"
         });
 
@@ -40,7 +42,7 @@ public class MahjongGame : ModuleRules
         
 		PrivateDependencyModuleNames.AddRange(new string[] {
             "InputCore",
-            //"MahjongGameLoadingScreen",
+            "MahjongGameLoadingScreen",
             "Json",
             "OnlineSubsystem"
         });

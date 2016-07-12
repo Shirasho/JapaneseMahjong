@@ -14,19 +14,17 @@ void UMahjongGameUserSettings::SetToDefaults()
 	Super::SetToDefaults();
 
 	GraphicsQuality = 1;
+    ResolutionScale = 100;
 	bIsLanMatch = true;
 }
 
 void UMahjongGameUserSettings::ApplySettings(bool bCheckForCommandLineOverrides)
 {
-	if (GraphicsQuality == 0)
-	{
-		ScalabilityQuality.SetFromSingleQualityLevel(1);
-	}
-	else
-	{
-		ScalabilityQuality.SetFromSingleQualityLevel(3);
-	}
+    // Overall quality.
+	ScalabilityQuality.SetFromSingleQualityLevel(3);
+
+    // Resolution scale.
+    ScalabilityQuality.ResolutionQuality = ResolutionScale;
 
 	Super::ApplySettings(bCheckForCommandLineOverrides);
 }

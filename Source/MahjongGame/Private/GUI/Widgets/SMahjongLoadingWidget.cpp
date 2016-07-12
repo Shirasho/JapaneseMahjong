@@ -3,13 +3,15 @@
 #include "MahjongGame.h"
 #include "SMahjongLoadingWidget.h"
 
+#include "SlateExtras.h"    // Required for SSafeZone and SThrobber
+#include "MahjongLoadingScreenBrush.h"
+
 void SMahjongLoadingWidget::Construct(const FArguments& InArgs)
 {
     static const FName LoadingScreenName(TEXT("/Game/UI/Menu/LoadingScreen.LoadingScreen"));
 
-    //@TODO
     //since we are not using game styles here, just load one image
-    /*LoadingScreenBrush = MakeShareable(new FMahjongGameLoadingScreenBrush(LoadingScreenName, FVector2D(1920, 1080)));
+    LoadingScreenBrush = MakeShareable(new FMahjongGameLoadingScreenBrush(LoadingScreenName, FVector2D(1920, 1080)));
 
     ChildSlot
         [
@@ -32,8 +34,8 @@ void SMahjongLoadingWidget::Construct(const FArguments& InArgs)
         .IsTitleSafe(true)
         [
             SNew(SThrobber)
-            .Visibility(this, &SMahjongLoadingScreen::GetLoadIndicatorVisibility)
+            .Visibility(this, &SMahjongLoadingWidget::GetLoadIndicatorVisibility)
         ]
         ]
-        ];*/
+        ];
 }

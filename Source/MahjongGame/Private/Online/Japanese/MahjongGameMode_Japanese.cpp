@@ -11,17 +11,12 @@
 AMahjongGameMode_Japanese::AMahjongGameMode_Japanese(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-    //static ConstructorHelpers::FClassFinder<APawn> CH_PlayerPawn(TEXT("/Game/Blueprints/Pawns/PlayerPawn"));
-    //static ConstructorHelpers::FClassFinder<APawn> CH_AIPawn(TEXT("/Game/Blueprints/Pawns/AIPawn"));
-
     //@TODO
-    //DefaultPawnClass = CH_PlayerPawn.Class;
-    //AIPawnClass = CH_AIPawn.Class;
-    //HUDClass = AMahjongHUD::StaticClass();
     //PlayerControllerClass = AMahjongPlayerController::StaticClass();
     //PlayerStateClass = AMahjongPlayerState::StaticClass();
-    //Spectatorclass = AMahjongSpectatorPawn::StaticClass();
     //GameStateClass = AMahjongGameState::StaticClass();
+
+    //Spectatorclass = AMahjongSpectatorPawn::StaticClass();
     //ReplaySpectatorPlayerControllerClass = AMahjongReplaySpectator::StaticClass();
 }
 

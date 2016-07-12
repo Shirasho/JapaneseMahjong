@@ -5,6 +5,7 @@
 
 #include "MahjongPlayerCameraManager.h"
 #include "MahjongExec.h"
+#include "MahjongHUD.h"
 #include "MahjongGameInstance.h"
 #include "MahjongGameViewportClient.h"
 #include "MahjongPlayerState.h"
@@ -235,7 +236,7 @@ void AMahjongPlayerController::ClientEndOnlineGame_Implementation()
     }
 }
 
-void AMahjongPlayerController::ClientSendRoundEndEvent_Implementation(bool bIsWinner, int32 ExpendedTimeInSeconds)
+void AMahjongPlayerController::ClientSendGameEndEvent_Implementation(bool bIsWinner, int32 ExpendedTimeInSeconds)
 {
     const auto Events = Online::GetEventsInterface();
     ULocalPlayer* LocalPlayer = Cast<ULocalPlayer>(Player);
@@ -340,11 +341,103 @@ void AMahjongPlayerController::UpdateSaveFileOnGameEnd(bool bIsWinner)
     }
 }
 
+void AMahjongPlayerController::OnWin()
+{
+    //@TODO Achievements here.
+
+    ULocalPlayer* const LocalPlayer = Cast<ULocalPlayer>(Player);
+    if (LocalPlayer)
+    {
+        const IOnlineEventsPtr EventInterface = Online::GetEventsInterface();
+        const IOnlineIdentityPtr IdentityInterface = Online::GetIdentityInterface();
+
+        if (EventInterface.IsValid() && IdentityInterface.IsValid())
+        {
+            const int32 UserIndex = LocalPlayer->GetControllerId();
+            TSharedPtr<const FUniqueNetId> UniqueId = IdentityInterface->GetUniquePlayerId(UserIndex);
+
+            if (UniqueId.IsValid())
+            {
+                FOnlineEventParms Params;
+                Params.Add(TEXT("SectionId"), FVariantData((int32)0)); // Unused
+                Params.Add(TEXT("GameplayModeId"), FVariantData((int32)1)); //@TODO Get game mode.
+                Params.Add(TEXT("DifficultyLevelId"), FVariantData((int32)0)); //@TODO Get bot difficulty.
+
+                Params.Add(TEXT("PlayerRoleId"), FVariantData((int32)0)); // unused
+                Params.Add(TEXT("PlayerWeaponId"), FVariantData((int32)0)); // unused
+                Params.Add(TEXT("EnemyRoleId"), FVariantData((int32)0)); // unused
+                Params.Add(TEXT("EnemyWeaponId"), FVariantData((int32)0)); // unused
+
+                Params.Add(TEXT("LocationX"), FVariantData((int32)0)); // unused
+                Params.Add(TEXT("LocationY"), FVariantData((int32)0)); // unused
+                Params.Add(TEXT("LocationZ"), FVariantData((int32)0)); // unused
+
+                EventInterface->TriggerEvent(*UniqueId, TEXT("PlayerWin"), Params);
+            }
+        }
+    }
+}
+
+void AMahjongPlayerController::OnWinMessage(class AMahjongPlayerState* WinnerPlayerState)
+{
+    AMahjongHUD* const MahjongHUD = Cast<AMahjongHUD>(GetHUD());
+    if (MahjongHUD)
+    {
+        MahjongHUD->ShowWinMessage(WinnerPlayerState);
+    }
+
+    ULocalPlayer* const LocalPlayer = Cast<ULocalPlayer>(Player);
+    if (LocalPlayer && LocalPlayer->GetCachedUniqueNetId().IsValid() && WinnerPlayerState->UniqueId.IsValid())
+    {
+        // If this controller is the player who won, update their stats.
+        if (*LocalPlayer->GetCachedUniqueNetId() == *WinnerPlayerState->UniqueId)
+        {
+            const IOnlineEventsPtr EventInterface = Online::GetEventsInterface();
+            const IOnlineIdentityPtr IdentityInterface = Online::GetIdentityInterface();
+
+            if (EventInterface.IsValid() && IdentityInterface.IsValid())
+            {
+                const int32 UserIndex = LocalPlayer->GetControllerId();
+                TSharedPtr<const FUniqueNetId> UniqueId = IdentityInterface->GetUniquePlayerId(UserIndex);
+
+                if (UniqueId.IsValid())
+                {
+                    FOnlineEventParms Params;
+                    Params.Add(TEXT("SectionId"), FVariantData((int32)0)); // Unused
+                    Params.Add(TEXT("GameplayModeId"), FVariantData((int32)1)); //@TODO Get game mode.
+                    Params.Add(TEXT("DifficultyLevelId"), FVariantData((int32)0)); //@TODO Get bot difficulty.
+
+                    Params.Add(TEXT("PlayerRoleId"), FVariantData((int32)0)); // unused
+                    Params.Add(TEXT("PlayerWeaponId"), FVariantData((int32)0)); // unused
+                    Params.Add(TEXT("EnemyRoleId"), FVariantData((int32)0)); // unused
+                    Params.Add(TEXT("EnemyWeaponId"), FVariantData((int32)0)); // unused
+
+                    Params.Add(TEXT("LocationX"), FVariantData((int32)0)); // unused
+                    Params.Add(TEXT("LocationY"), FVariantData((int32)0)); // unused
+                    Params.Add(TEXT("LocationZ"), FVariantData((int32)0)); // unused
+
+                    EventInterface->TriggerEvent(*UniqueId, TEXT("PlayerWin"), Params);
+                }
+            }
+        }
+    }
+}
+
+void AMahjongPlayerController::ShowInGameMenu()
+{
+    AMahjongHUD* MahjongHUD = Cast<AMahjongHUD>(GetHUD());
+    //@TODO
+    /*if (MahjongInGameMenu.IsValid() && !MahjongInGameMenu->GetIsGameMenuUp() && MahjongHUD && !MahjongHUD->IsGameOver())
+    {
+        MahjongInGameMenu->ToggleGameMenu();
+    }*/
+}
+
 bool AMahjongPlayerController::IsGameMenuVisible() const
 {
     bool Result = false;
     //@TODO
-    /*if (MahjongIngameMenu.IsValid())
+    /*if (MahjongInGameMenu.IsValid())
     {
         Result = MahjongIngameMenu->GetIsGameMenuUp();
     }*/

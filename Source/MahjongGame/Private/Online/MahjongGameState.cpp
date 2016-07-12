@@ -12,6 +12,7 @@ AMahjongGameState::AMahjongGameState(const FObjectInitializer& ObjectInitializer
 	: Super(ObjectInitializer)
 {
 	RemainingTime = 0;
+    bTurnTimerUsed = true;
 	bTimerPaused = false;
 }
 
@@ -32,10 +33,7 @@ void AMahjongGameState::RequestFinishAndExitToMainMenu()
         UMahjongGameInstance* GameInstance = Cast<UMahjongGameInstance>(GetGameInstance());
         if (GameInstance)
         {
-            //@TODO For now we do not have split screen (due to the nature of Mahjong),
-            // but if we did it would need to be removed here.
-            
-            //GameInstance->RemoveSplitScreenPlayers();
+            GameInstance->RemoveSplitScreenPlayers();
         }
 
         AMahjongPlayerController* PlayerController = Cast<AMahjongPlayerController>(GetGameInstance()->GetFirstLocalPlayerController());

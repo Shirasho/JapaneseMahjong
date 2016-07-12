@@ -92,3 +92,19 @@ namespace EMahjongDialogType
 		ControllerDisconnected
 	};
 }
+
+namespace EMahjongGameState
+{
+    enum Type
+    {
+        Warmup,
+        Playing,
+        Won,
+        Lost
+    };
+}
+
+namespace MahjongWords
+{
+    const FString CustomMatchKeyword("Custom");
+}

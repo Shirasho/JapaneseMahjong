@@ -6,50 +6,53 @@
 #include "MahjongPlayerScoreContainer.generated.h"
 
 USTRUCT()
-struct FMahjongPlayerScoreContainer {
-
-	GENERATED_BODY()
-
-	UPROPERTY()
-	AMahjongPlayerState* PlayerState;
-
-	UPROPERTY()
-	uint32 Score;
-
-	void SetScore(uint32 Value)
+struct FMahjongPlayerScoreContainer
 {
-		Score = Value;
-	}
 
-	void AddScore(uint32 Value)
-{
-		Score += Value;
-	}
+    GENERATED_BODY()
 
-	void SubtractScore(uint32 Value)
-{
-		if ((int32)Score - (int32)Value < 0)
-{
-			Score = 0;
-		} else {
-			Score -= Value;
-		}
-	}
+    UPROPERTY()
+    AMahjongPlayerState* PlayerState;
 
-	bool IsValid() const
-{
-		if (!PlayerState) return false;
-		return PlayerState->IsValidLowLevel();
-	}
+    void SetScore(int32 Value)
+    {
+        if (IsValid())
+        {
+            PlayerState->Score = Value;
+        }
+    }
 
-	const AMahjongPlayerState* GetPlayerState() const
-{
-		return PlayerState;
-	}
+    void AddScore(int32 Value)
+    {
+        if (IsValid())
+        {
+            PlayerState->Score += Value;
+            // Ensure float accuracy.
+            PlayerState->Score = FMath::Max(FMath::RoundToInt(PlayerState->Score), 0);
+        }
+    }
 
-	FMahjongPlayerScoreContainer()
-{
-		Score = 0;
-		PlayerState = nullptr;
-	}
+    void SubtractScore(int32 Value)
+    {
+        if (IsValid())
+        {
+            PlayerState->Score -= Value;
+            // Ensure float accuracy.
+            PlayerState->Score = FMath::Max(FMath::RoundToInt(PlayerState->Score), 0);
+        }
+    }
+
+    bool IsValid() const
+    {
+        if (!PlayerState)
+        {
+            return false;
+        }
+        return PlayerState->IsValidLowLevel();
+    }
+
+    FMahjongPlayerScoreContainer()
+    {
+        PlayerState = nullptr;
+    }
 };

@@ -3,11 +3,11 @@
 #pragma once
 
 // Should we force the use of the console GUI?
-#define MAHJONG_SIMULATE_CONSOLE_UI	0
+#define MAHJONG_GUI_SIMULATE_CONSOLE_UI	0
 
 // Are we using the console GUI or the desktop GUI?
-#if PLATFORM_PS4 || PLATFORM_XBOXONE || MAHJONG_SIMULATE_CONSOLE_UI
-#define MAHJONG_CONSOLE_UI	1
+#if PLATFORM_PS4 || PLATFORM_XBOXONE || MAHJONG_GUI_SIMULATE_CONSOLE_UI
+#define MAHJONG_GUI_CONSOLE_UI	1
 #else
-#define MAHJONG_CONSOLE_UI	0
+#define MAHJONG_GUI_CONSOLE_UI	0
 #endif

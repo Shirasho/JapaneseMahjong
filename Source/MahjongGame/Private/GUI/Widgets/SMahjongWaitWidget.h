@@ -2,6 +2,7 @@
 
 #pragma once
 
+/* Widget that displays non-interactive waiting messages for things like network timeouts. */
 class SMahjongWaitWidget : public SCompoundWidget
 {
 public:

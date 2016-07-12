@@ -2,6 +2,11 @@
 
 #pragma once
 
-// Does our game require the online subsystem (to check for user validity, license, etc...).
-// This is akin to enabling or disabling DRM.
-#define MAHJONG_REQUIRE_OSS 1
+// Punt players to the welcome screen if they lose internet connection?
+#define MAHJONG_ONLINE_CONNECTION_REQUIRED 0
+
+// Check for user login changes?
+#define MAHJONG_ONLINE_MONITOR_ACCOUNT_CHANGES 1
+
+// Does the game require a license?
+#define MAHJONG_ONLINE_LICENSE_REQUIRED 0

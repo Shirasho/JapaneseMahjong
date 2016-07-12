@@ -48,9 +48,9 @@ public:
 	/** Notify player about finished match */
 	virtual void ClientGameEnded_Implementation(class AActor* EndGameFocus, bool bIsWinner);
 
-	/** Notifies clients to send the end-of-round event */
+	/** Notifies clients to send the end-of-game event */
 	UFUNCTION(reliable, client)
-	void ClientSendRoundEndEvent(bool bIsWinner, int32 ExpendedTimeInSeconds);
+	void ClientSendGameEndEvent(bool bIsWinner, int32 ExpendedTimeInSeconds);
 
     /* Overriden Message implementation. */
     virtual void ClientTeamMessage_Implementation(APlayerState* SenderPlayerState, const FString& Message, FName Type, float MsgLifeTime) override;
@@ -66,6 +66,11 @@ public:
     void ServerSay(const FString& Message);
 
 
+    /** Notify local client about win */
+    void OnWinMessage(class AMahjongPlayerState* WinnerPlayerState);
+
+    /** Informs that player won a game. */
+    void OnWin();
 
     /** is game menu currently active? */
     bool IsGameMenuVisible() const;
@@ -80,7 +85,7 @@ public:
 	UFUNCTION(exec)
 	virtual void Say(const FString& Message);
 
-	
+    void ShowInGameMenu();
 
 	/** check if gameplay related actions (movement, weapon usage, etc) are allowed right now */
 	bool IsGameInputAllowed() const;

@@ -21,8 +21,18 @@ public:
 
 	void SetGraphicsQuality(int32 InGraphicsQuality)
 	{
-		GraphicsQuality = InGraphicsQuality;
+		GraphicsQuality = FMath::Clamp(InGraphicsQuality, 0, 3);
 	}
+
+    float GetResolutionScale() const
+    {
+        return ResolutionScale;
+    }
+
+    void SetResolutionScale(float InResolutionScale)
+    {
+        ResolutionScale = FMath::Clamp(InResolutionScale, 10.f, 100.f);
+    }
 
 	bool IsLanMatch() const
 	{
@@ -45,6 +55,9 @@ private:
 	*/
 	UPROPERTY(config)
 	int32 GraphicsQuality;
+
+    UPROPERTY(config)
+    float ResolutionScale;
 
 	/** is lan match? */
 	UPROPERTY(config)

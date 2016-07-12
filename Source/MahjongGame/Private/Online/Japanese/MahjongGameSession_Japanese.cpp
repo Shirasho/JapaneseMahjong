@@ -5,11 +5,6 @@
 
 #include "Private/Online/MahjongGameOnlineSettings.h"
 
-namespace
-{
-    const FString CustomMatchKeyword("Custom");
-}
-
 
 AMahjongGameSession_Japanese::AMahjongGameSession_Japanese(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -41,7 +36,7 @@ bool AMahjongGameSession_Japanese::HostSession(TSharedPtr<const FUniqueNetId> Us
             HostSettings->Set(SETTING_MATCHING_HOPPER, FString("JapaneseMahjong"), EOnlineDataAdvertisementType::DontAdvertise);
             HostSettings->Set(SETTING_MATCHING_TIMEOUT, 120.0f, EOnlineDataAdvertisementType::ViaOnlineService);
             HostSettings->Set(SETTING_SESSION_TEMPLATE_NAME, FString("GameSession"), EOnlineDataAdvertisementType::DontAdvertise);
-            HostSettings->Set(SEARCH_KEYWORDS, CustomMatchKeyword, EOnlineDataAdvertisementType::ViaOnlineService);
+            HostSettings->Set(SEARCH_KEYWORDS, MahjongWords::CustomMatchKeyword, EOnlineDataAdvertisementType::ViaOnlineService);
 
             OnCreateSessionCompleteDelegateHandle = Sessions->AddOnCreateSessionCompleteDelegate_Handle(OnCreateSessionCompleteDelegate);
             return Sessions->CreateSession(*CurrentSessionParams.UserId, CurrentSessionParams.SessionName, *HostSettings);

@@ -2,6 +2,7 @@
 
 #pragma once
 
+/* Container that holds the pending invite information. */
 class FMahjongPendingInvite
 {
 public:

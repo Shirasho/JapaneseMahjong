@@ -2,6 +2,7 @@
 
 #pragma once
 
+/* Container that holds the message to display when we are in the "MessageMenu" state. */
 class FMahjongPendingMessage
 {
 public:

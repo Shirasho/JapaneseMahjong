@@ -4,15 +4,15 @@
 
 #include "MahjongPendingMessage.h"
 #include "MahjongPendingInvite.h"
+
 #include "MahjongGameInstance.generated.h"
 
 class FMahjongMainMenu;
 class FMahjongWelcomeMenu;
 class FMahjongMessageMenu;
-
 class SMahjongWaitWidget;
-
 class AMahjongGameSession;
+
 
 namespace MahjongGameInstanceState
 {
@@ -25,16 +25,18 @@ namespace MahjongGameInstanceState
 }
 
 
-UCLASS(config = Game)
+UCLASS(config=Game)
 class UMahjongGameInstance : public UGameInstance
 {
     GENERATED_UCLASS_BODY()
 
 private:
 
+    /** The map the game loads into on consoles. */
     UPROPERTY(config)
     FString WelcomeScreenMap;
 
+    /** The map the game loads into on PCs. Also contains the main menu map. */
     UPROPERTY(config)
     FString MainMenuMap;
 
@@ -56,11 +58,14 @@ private:
     /** Whether the user has an active license to play the game */
     bool bIsLicensed;
 
+    /** If true, enable splitscreen when map starts loading */
+    bool bPendingEnableSplitscreen;
+
 
     /** Main menu UI */
     TSharedPtr<FMahjongMainMenu> MainMenu;
 
-    /** Message menu (Shown in the even of errors - unable to connect etc) */
+    /** Message menu (Shown in the event of errors - unable to connect etc) */
     TSharedPtr<FMahjongMessageMenu> MessageMenu;
 
     /** Welcome menu UI (for consoles) */
@@ -92,15 +97,7 @@ private:
     /** Delegate for ending a session */
     FOnEndSessionCompleteDelegate OnEndSessionCompleteDelegate;
 
-    /** Main menu UI */
-    //TSharedPtr<FMahjongMainMenu> MainMenuUI;
-
-    /** Message menu (Shown in the even of errors - unable to connect etc) */
-    //TSharedPtr<FMahjongMessageMenu> MessageMenuUI;
-
-    /** Welcome menu UI (for consoles) */
-    //TSharedPtr<FMahjongWelcomeMenu> WelcomeMenuUI;
-
+    /** Asset loader for async requests. */
     FStreamableManager AssetLoader;
 
 public:
@@ -125,6 +122,8 @@ public:
     bool JoinSession(ULocalPlayer* LocalPlayer, int32 SessionIndexInSearchResults);
     bool JoinSession(ULocalPlayer* LocalPlayer, const FOnlineSessionSearchResult& SearchResult);
 
+    void BeginHostingGame(int32 Map);
+
     /** Travel directly to the named session */
     void TravelToSession(const FName& SessionName);
 
@@ -139,6 +138,8 @@ public:
 
     /** Sends the game to the initial startup/frontend state  */
     void GotoInitialState();
+
+    void RemoveSplitScreenPlayers();
 
     /**
     * Creates the message menu, clears other menus and sets the KingState to Message.

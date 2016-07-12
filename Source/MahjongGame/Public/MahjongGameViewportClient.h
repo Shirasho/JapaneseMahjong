@@ -8,23 +8,6 @@
 class SMahjongLoadingWidget;
 class SMahjongDialogWidget;
 
-//struct FMahjongGameLoadingScreenBrush : public FSlateDynamicImageBrush, public FGCObject
-//{
-//    FMahjongGameLoadingScreenBrush(const FName InTextureName, const FVector2D& InImageSize)
-//        : FSlateDynamicImageBrush(InTextureName, InImageSize)
-//    {
-//        ResourceObject = LoadObject<UObject>(NULL, *InTextureName.ToString());
-//    }
-//
-//    virtual void AddReferencedObjects(FReferenceCollector& Collector)
-//    {
-//        if (ResourceObject)
-//        {
-//            Collector.AddReferencedObject(ResourceObject);
-//        }
-//    }
-//};
-
 UCLASS(Within=Engine, transient, config=Engine)
 class UMahjongGameViewportClient : public UGameViewportClient
 {

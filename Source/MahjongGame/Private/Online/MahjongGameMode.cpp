@@ -3,6 +3,7 @@
 #include "MahjongGame.h"
 #include "MahjongGameMode.h"
 
+#include "MahjongHUD.h"
 #include "MahjongAIController.h"
 #include "MahjongPlayerController.h"
 #include "MahjongPlayerState.h"
@@ -16,18 +17,18 @@ AMahjongGameMode::AMahjongGameMode(const FObjectInitializer& ObjectInitializer)
     // Whether the game should immediately start when the first player logs in. Affects the default behavior of ReadyToStartMatch.
     bDelayedStart = true;
 
-	static ConstructorHelpers::FClassFinder<APawn> CH_PlayerPawn(TEXT("/Game/Blueprints/Pawns/PlayerPawn"));
-	static ConstructorHelpers::FClassFinder<APawn> CH_AIPawn(TEXT("/Game/Blueprints/Pawns/AIPawn"));
+	static ConstructorHelpers::FClassFinder<APawn> CH_PlayerPawn(TEXT("/Game/Blueprints/Pawns/MahjongPlayer"));
+	static ConstructorHelpers::FClassFinder<APawn> CH_AIPawn(TEXT("/Game/Blueprints/Pawns/MahjongBot"));
 
 	DefaultPawnClass = CH_PlayerPawn.Class;
 	AIPawnClass = CH_AIPawn.Class;
 
-	//@TODO
-	//HUDClass = AMahjongHUD::StaticClass();
+	HUDClass = AMahjongHUD::StaticClass();
 	PlayerControllerClass = AMahjongPlayerController::StaticClass();
 	PlayerStateClass = AMahjongPlayerState::StaticClass();
-	//Spectatorclass = AMahjongSpectatorPawn::StaticClass();
 	GameStateClass = AMahjongGameState::StaticClass();
+
+    //Spectatorclass = AMahjongSpectatorPawn::StaticClass();
 	//ReplaySpectatorPlayerControllerClass = AMahjongReplaySpectator::StaticClass();
 }
 
@@ -68,10 +69,7 @@ void AMahjongGameMode::RequestFinishAndExitToMainMenu()
     UMahjongGameInstance* GameInstance = Cast<UMahjongGameInstance>(GetGameInstance());
     if (GameInstance)
     {
-        //@TODO For now we do not have split screen (due to the nature of Mahjong),
-        // but if we did it would need to be removed here.
-
-        //GameInstance->RemoveSplitScreenPlayers();
+        GameInstance->RemoveSplitScreenPlayers();
     }
 
     AMahjongPlayerController* PlayerController = nullptr;

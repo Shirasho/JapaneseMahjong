@@ -31,19 +31,16 @@ public:
 	/** Score points. */
 	void ScoreWin(TArray<TPair<AMahjongPlayerState*, float>> FromArray);
 
-	/** Lose points. */
-	void ScoreLoss(AMahjongPlayerState* Player, int32 PointLoss);
-
 	/** gets truncated player name to fit in logs and scoreboards */
 	FString GetShortPlayerName() const;
 
-	/** Sends kill (excluding self) to clients */
-	//UFUNCTION(Reliable, Client)
-	//void InformAboutKill(class AShooterPlayerState* KillerPlayerState, const UDamageType* KillerDamageType, class AShooterPlayerState* KilledPlayerState);
+	/** Sends win (excluding self) to clients */
+	UFUNCTION(Reliable, Client)
+	void InformAboutWin(class AMahjongPlayerState* WinnerPlayerState);
 
-	/** broadcast death to local clients */
-	//UFUNCTION(Reliable, NetMulticast)
-	//void BroadcastDeath(class AShooterPlayerState* KillerPlayerState, const UDamageType* KillerDamageType, class AShooterPlayerState* KilledPlayerState);
+	/** Broadcast win to local clients */
+	UFUNCTION(Reliable, NetMulticast)
+	void BroadcastWin(class AMahjongPlayerState* WinnerPlayerState);
 
     FORCEINLINE uint8 GetPlayerWind() { return PlayerWind; }
     FORCEINLINE bool GetQuitter() { return bQuitter; }

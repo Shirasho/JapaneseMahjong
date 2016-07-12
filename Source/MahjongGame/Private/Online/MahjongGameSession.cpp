@@ -7,11 +7,6 @@
 
 #include "MahjongPlayerController.h"
 
-namespace
-{
-    const FString CustomMatchKeyword("Custom");
-}
-
 AMahjongGameSession::AMahjongGameSession(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
@@ -195,7 +190,7 @@ bool AMahjongGameSession::HostSession(TSharedPtr<const FUniqueNetId> UserId, FNa
             HostSettings->Set(SETTING_MATCHING_HOPPER, FString("InvalidGameMode"), EOnlineDataAdvertisementType::DontAdvertise);
             HostSettings->Set(SETTING_MATCHING_TIMEOUT, 120.0f, EOnlineDataAdvertisementType::ViaOnlineService);
             HostSettings->Set(SETTING_SESSION_TEMPLATE_NAME, FString("GameSession"), EOnlineDataAdvertisementType::DontAdvertise);
-            HostSettings->Set(SEARCH_KEYWORDS, CustomMatchKeyword, EOnlineDataAdvertisementType::ViaOnlineService);
+            HostSettings->Set(SEARCH_KEYWORDS, MahjongWords::CustomMatchKeyword, EOnlineDataAdvertisementType::ViaOnlineService);
 
             OnCreateSessionCompleteDelegateHandle = Sessions->AddOnCreateSessionCompleteDelegate_Handle(OnCreateSessionCompleteDelegate);
             return Sessions->CreateSession(*CurrentSessionParams.UserId, CurrentSessionParams.SessionName, *HostSettings);
@@ -303,7 +298,7 @@ void AMahjongGameSession::FindSessions(TSharedPtr<const FUniqueNetId> UserId, FN
         if (Sessions.IsValid() && CurrentSessionParams.UserId.IsValid())
         {
             SearchSettings = MakeShareable(new FMahjongOnlineSearchSettings(bIsLAN, bIsPresence));
-            SearchSettings->QuerySettings.Set(SEARCH_KEYWORDS, CustomMatchKeyword, EOnlineComparisonOp::Equals);
+            SearchSettings->QuerySettings.Set(SEARCH_KEYWORDS, MahjongWords::CustomMatchKeyword, EOnlineComparisonOp::Equals);
 
             TSharedRef<FOnlineSessionSearch> SearchSettingsRef = SearchSettings.ToSharedRef();
 

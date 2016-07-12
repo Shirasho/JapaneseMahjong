@@ -16,6 +16,10 @@ public:
 	UPROPERTY(Transient, Replicated)
 	int32 RemainingTime;
 
+    /** Whether the turn timer is required for this game. */
+    UPROPERTY(Transient, Replicated)
+    bool bTurnTimerUsed;
+
 	/** Whether the timer is paused. */
 	UPROPERTY(Transient, Replicated)
 	bool bTimerPaused;

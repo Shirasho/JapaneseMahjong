@@ -16,9 +16,8 @@
 #include "MahjongGameViewportClient.h"
 #include "MahjongCharacter.h"
 #include "MahjongPlayerController.h"
-#include "MahjongPlayerController_Menu.h"
 
-//#include "MahjongConfirmationDialog.h"
+#include "MahjongGameLoadingScreen.h"
 
 namespace MahjongGameInstanceState
 {
@@ -43,10 +42,11 @@ void UMahjongGameInstance::Init()
 {
     Super::Init();
 
+    bPendingEnableSplitscreen = false;
+
     IgnorePairingChangeForControllerId = -1;
     CurrentConnectionStatus = EOnlineServerConnectionStatus::Connected;
 
-#if MAHJONG_REQUIRE_OSS
     IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
     check(OnlineSubsystem);
     IOnlineIdentityPtr OnlineIdentity = OnlineSubsystem->GetIdentityInterface();
@@ -66,7 +66,6 @@ void UMahjongGameInstance::Init()
     SessionInterface->AddOnSessionFailureDelegate_Handle(FOnSessionFailureDelegate::CreateUObject(this, &UMahjongGameInstance::HandleSessionFailure));
 
     OnEndSessionCompleteDelegate = FOnEndSessionCompleteDelegate::CreateUObject(this, &UMahjongGameInstance::OnEndSessionComplete);
-#endif
 
     // Bind core application delegates.
     FCoreDelegates::ApplicationWillDeactivateDelegate.AddUObject(this, &UMahjongGameInstance::HandleAppWillDeactivate);
@@ -186,43 +185,60 @@ void UMahjongGameInstance::HandleSessionFailure(const FUniqueNetId& NetId, ESess
 
 void UMahjongGameInstance::OnPreLoadMap()
 {
-    // Do nothing
+    if (bPendingEnableSplitscreen)
+    {
+        GetGameViewportClient()->SetDisableSplitscreenOverride(false);
+        bPendingEnableSplitscreen = false;
+    }
 }
 
 void UMahjongGameInstance::OnPostLoadMap()
 {
     UMahjongGameViewportClient* MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
 
-    if (MahjongViewport != nullptr)
+    if (MahjongViewport)
     {
+        // When the map finishes loading, hide the loading screen.
         MahjongViewport->HideLoadingScreen();
     }
 }
 
 void UMahjongGameInstance::OnUserCanPlayInvite(const FUniqueNetId& UserId, EUserPrivileges::Type Privilege, uint32 PrivilegeResults)
 {
+    // Remove the widget that is displaying a wait message that we are
+    // checking the server for the user's privileges.
     CleanupOnlinePrivilegeTask();
-    /*if (WelcomeMenuUI.IsValid())
-    {
-        WelcomeMenuUI->LockControls(false);
-    }*/
 
+    // If the welcome menu is valid (on consoles), unlock the controls
+    // to allow user input.
+    if (WelcomeMenu.IsValid())
+    {
+        WelcomeMenu->LockControls(false);
+    }
+
+    // If there were no problems getting the user's priviledges
     if (PrivilegeResults == (uint32)IOnlineIdentity::EPrivilegeResults::NoFailures)
     {
+        // If the user's ID is equal to the pending invite ID
         if (UserId == *PendingInvite.UserId)
         {
+            // The user is verified.
             PendingInvite.bPrivilegesCheckedAndAllowed = true;
         }
     }
     else
     {
+        // Display an error message.
         DisplayOnlinePrivilegeFailureDialogs(UserId, Privilege, PrivilegeResults);
+        // Go back to the welcome screen. The user is not allowed to play.
         GotoState(MahjongGameInstanceState::WelcomeScreen);
     }
 }
 
 void UMahjongGameInstance::StartGameInstance()
 {
+
+    // For now the PS4 does not handle command line.
 #if PLATFORM_PS4 == 0
     TCHAR Parm[4096] = TEXT("");
 
@@ -343,25 +359,34 @@ void UMahjongGameInstance::ShowMessageThenGotoState(const FText& Message, const 
 
 void UMahjongGameInstance::ShowLoadingScreen()
 {
-    //@TODO
-    //  This can be confusing, so here is what is happening:
-    //	For LoadMap, we use the IMahjongGameLoadingScreenModule interface to show the load screen
-    //  This is necessary since this is a blocking call, and our viewport loading screen won't get updated.
-    //  We can't use IMahjongGameLoadingScreenModule for seamless travel though
-    //  In this case, we just add a widget to the viewport, and have it update on the main thread
-    //  To simplify things, we just do both, and you can't tell, one will cover the other if they both show at the same time
-    /*IMahjongGameLoadingScreenModule* LoadingScreenModule = FModuleManager::LoadModulePtr<IMahjongGameLoadingScreenModule>("MahjongGameLoadingScreen");
-    if (LoadingScreenModule != nullptr)
+    //  Since LoadMap is a blocking call our viewport loading widget won't get updated.
+    //  For various reasons we can't use IMahjongGameLoadingScreenModule for seamless travel.
+    //  In this case, we just add a widget to the viewport, and have it update on the main thread.
+    //  To simplify things, we just do both, and you can't tell, one will cover the other if they both show at the same time.
+
+    // (Currently) static loading screen for blocking calls since MahjongViewport will not be updated.
+    IMahjongGameLoadingScreenModule* LoadingScreenModule = FModuleManager::LoadModulePtr<IMahjongGameLoadingScreenModule>("MahjongGameLoadingScreen");
+    if (LoadingScreenModule)
     {
         LoadingScreenModule->StartInGameLoadingScreen();
     }
-    */
 
+    // Regular dynamic loading screen for non-blocking calls.
     UMahjongGameViewportClient* MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
-
-    if (MahjongViewport != nullptr)
+    if (MahjongViewport)
     {
         MahjongViewport->ShowLoadingScreen();
+    }
+}
+
+void UMahjongGameInstance::RemoveSplitScreenPlayers()
+{
+    // If we had been split screen, toss the extra players now
+    // remove every player, back to front, except the first one
+    while (LocalPlayers.Num() > 1)
+    {
+        ULocalPlayer* const PlayerToRemove = LocalPlayers.Last();
+        RemoveExistingLocalPlayer(PlayerToRemove);
     }
 }
 
@@ -382,12 +407,11 @@ bool UMahjongGameInstance::LoadFrontEndMap(const FString& MapName)
 
     FString Error;
     EBrowseReturnVal::Type BrowseRet = EBrowseReturnVal::Failure;
-    FURL URL(
-        *FString::Printf(TEXT("%s"), *MapName)
-    );
+    FURL URL(*FString::Printf(TEXT("%s"), *MapName));
 
     if (URL.Valid && !HasAnyFlags(RF_ClassDefaultObject)) //CastChecked<UEngine>() will fail if using Default__MahjongGameInstance, so make sure that we're not default
     {
+        // Attempt to load the map.
         BrowseRet = GetEngine()->Browse(*WorldContext, URL, Error);
 
         // Handle failure.
@@ -402,10 +426,10 @@ bool UMahjongGameInstance::LoadFrontEndMap(const FString& MapName)
 
 AMahjongGameSession* UMahjongGameInstance::GetGameSession() const
 {
-    UWorld* const World = GetWorld();
+    const UWorld* const World = GetWorld();
     if (World)
     {
-        AGameMode* const Game = World->GetAuthGameMode();
+        const AGameMode* const Game = World->GetAuthGameMode();
         if (Game)
         {
             return Cast<AMahjongGameSession>(Game->GameSession);
@@ -417,18 +441,16 @@ AMahjongGameSession* UMahjongGameInstance::GetGameSession() const
 
 void UMahjongGameInstance::TravelLocalSessionFailure(UWorld *World, ETravelFailure::Type FailureType, const FString& ReasonString)
 {
-    AMahjongPlayerController_Menu* FirstPC = Cast<AMahjongPlayerController_Menu>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-    if (FirstPC)
-    {
-        FText ReturnReason = NSLOCTEXT("NetworkErrors", "JoinSessionFailed", "Join Session failed.");
-        if (ReasonString.IsEmpty() == false)
-        {
-            ReturnReason = FText::Format(NSLOCTEXT("NetworkErrors", "JoinSessionFailedReasonFmt", "Join Session failed. {0}"), FText::FromString(ReasonString));
-        }
+    //@TODO Is checking for a player controller necessary here?
 
-        FText OKButton = NSLOCTEXT("DialogButtons", "OKAY", "OK");
-        ShowMessageThenGoMain(ReturnReason, OKButton, FText::GetEmpty());
+    FText ReturnReason = NSLOCTEXT("NetworkErrors", "JoinSessionFailed", "Join Session failed.");
+    if (ReasonString.IsEmpty() == false)
+    {
+        ReturnReason = FText::Format(NSLOCTEXT("NetworkErrors", "JoinSessionFailedReasonFmt", "Join Session failed. {0}"), FText::FromString(ReasonString));
     }
+
+    FText OKButton = NSLOCTEXT("DialogButtons", "OKAY", "OK");
+    ShowMessageThenGoMain(ReturnReason, OKButton, FText::GetEmpty());
 }
 
 void UMahjongGameInstance::ShowMessageThenGoMain(const FText& Message, const FText& OKButtonString, const FText& CancelButtonString)
@@ -449,20 +471,19 @@ void UMahjongGameInstance::MaybeChangeState()
     {
         FName const OldState = CurrentState;
 
-        // end current state
+        // End current state.
         EndCurrentState(PendingState);
 
-        // begin new state
+        // Begin new state.
         BeginNewState(PendingState, OldState);
 
-        // clear pending change
+        // Clear pending change.
         PendingState = MahjongGameInstanceState::None;
     }
 }
 
 void UMahjongGameInstance::EndCurrentState(FName NextState)
 {
-    // per-state custom ending code here
     if (CurrentState == MahjongGameInstanceState::PendingInvite)
     {
         EndPendingInviteState();
@@ -489,8 +510,6 @@ void UMahjongGameInstance::EndCurrentState(FName NextState)
 
 void UMahjongGameInstance::BeginNewState(FName NewState, FName PrevState)
 {
-    // per-state custom starting code here
-
     if (NewState == MahjongGameInstanceState::PendingInvite)
     {
         BeginPendingInviteState();
@@ -517,74 +536,88 @@ void UMahjongGameInstance::BeginNewState(FName NewState, FName PrevState)
 
 void UMahjongGameInstance::BeginPendingInviteState()
 {
+    // If we can load the main menu map...
     if (LoadFrontEndMap(MainMenuMap))
     {
+        //@TODO This checks that the player can play online. This may equate to always requiring an internet connection
+        // to play. Change EUserPrivileges::CanPlayOnline to EUserPrivileges::CanPlay if this is an issue. I'm not exactly
+        // sure when the owning method is called.
+
+        // Check that the player can play online. If they can't, go to the welcome screen.
         StartOnlinePrivilegeTask(IOnlineIdentity::FOnGetUserPrivilegeCompleteDelegate::CreateUObject(this, &UMahjongGameInstance::OnUserCanPlayInvite), EUserPrivileges::CanPlayOnline, PendingInvite.UserId);
     }
     else
     {
+        // We can't load the main menu map. Go to the welcome screen.
         GotoState(MahjongGameInstanceState::WelcomeScreen);
     }
 }
 
 void UMahjongGameInstance::EndPendingInviteState()
 {
-    // cleanup in case the state changed before the pending invite was handled.
+    // Cleanup in case the state changed before the pending invite was handled.
     CleanupOnlinePrivilegeTask();
 }
 
 void UMahjongGameInstance::BeginWelcomeScreenState()
 {
-    //this must come before split screen player removal so that the OSS sets all players to not using online features.
+    //This must come before split screen player removal so that the OSS sets all players to not using online features.
     SetIsOnline(false);
 
     // Remove any possible splitscren players
-    while (LocalPlayers.Num() > 1)
-    {
-        ULocalPlayer* const PlayerToRemove = LocalPlayers.Last();
-        RemoveExistingLocalPlayer(PlayerToRemove);
-    }
+    RemoveSplitScreenPlayers();
 
+    // Load the welcome screen map.
     LoadFrontEndMap(WelcomeScreenMap);
 
+    // Reset the cached unique net id in case we ever come back
+    // to this screen.
     ULocalPlayer* const LocalPlayer = GetFirstGamePlayer();
     LocalPlayer->SetCachedUniqueNetId(nullptr);
 
-    //@TODO
-    /*check(!WelcomeMenuUI.IsValid());
-    WelcomeMenuUI = MakeShareable(new FMahjongWelcomeMenu);
-    WelcomeMenuUI->Construct(this);
-    WelcomeMenuUI->AddToGameViewport();*/
+    // The welcome menu should not be valid at this point
+    // (meaning we should not be calling this method in the
+    // welcome screen state).
+    check(!WelcomeMenu.IsValid());
 
-    // Disallow splitscreen (we will allow while in the playing state)
+    // Make a new WelcomeMenu widget and add it to the viewport.
+    WelcomeMenu = MakeShareable(new FMahjongWelcomeMenu);
+    WelcomeMenu->Construct(this);
+    WelcomeMenu->AddToGameViewport();
+
+    // Disallow splitscreen in this menu.
     GetGameViewportClient()->SetDisableSplitscreenOverride(true);
 }
 
 void UMahjongGameInstance::EndWelcomeScreenState()
 {
-    //@TODO
-    /*if (WelcomeMenuUI.IsValid())
+    // If the welcome screen is valid, remove it from the viewport and remove it from memory.
+    if (WelcomeMenu.IsValid())
     {
-        WelcomeMenuUI->RemoveFromGameViewport();
-        WelcomeMenuUI = nullptr;
-    }*/
+        WelcomeMenu->RemoveFromGameViewport();
+        WelcomeMenu = nullptr;
+    }
 }
 
 void UMahjongGameInstance::SetPresenceForLocalPlayers(const FVariantData& PresenceData)
 {
-    IOnlinePresencePtr Presence = Online::GetPresenceInterface();
-    if (Presence.IsValid())
+    IOnlinePresencePtr PresenceInterface = Online::GetPresenceInterface();
+    if (PresenceInterface.IsValid())
     {
+        // For all local players...
         for (int i = 0; i < LocalPlayers.Num(); ++i)
         {
+            // Get the player's unique net Id.
             const TSharedPtr<const FUniqueNetId> UserId = LocalPlayers[i]->GetPreferredUniqueNetId();
 
+            // If the Id is valid...
             if (UserId.IsValid())
             {
+                // Make this user visible to online services such as Live, PSN, etc...
                 FOnlineUserPresenceStatus PresenceStatus;
                 PresenceStatus.Properties.Add(DefaultPresenceKey, PresenceData);
 
-                Presence->SetPresence(*UserId, PresenceStatus);
+                PresenceInterface->SetPresence(*UserId, PresenceStatus);
             }
         }
     }
@@ -592,39 +625,39 @@ void UMahjongGameInstance::SetPresenceForLocalPlayers(const FVariantData& Presen
 
 void UMahjongGameInstance::BeginMainMenuState()
 {
-    // Make sure we're not showing the loadscreen
-    UMahjongGameViewportClient* MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
-
+    
+    UMahjongGameViewportClient* const MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
     if (MahjongViewport)
     {
+        //@TODO Why are we hiding the loading screen here if we are loading the map later in the method?
+        // Ensure we're not showing the load screen.
         MahjongViewport->HideLoadingScreen();
     }
 
+    // If this instance is in the main menu, all of the local players are offline (since splitscreen
+    // is disabled in menus).
     SetIsOnline(false);
 
-    // Disallow splitscreen
+    // Disable splitscreen.
     GetGameViewportClient()->SetDisableSplitscreenOverride(true);
 
     // Remove any possible splitscren players
-    while (LocalPlayers.Num() > 1)
-    {
-        ULocalPlayer* const PlayerToRemove = LocalPlayers.Last();
-        RemoveExistingLocalPlayer(PlayerToRemove);
-    }
+    RemoveSplitScreenPlayers();
 
-    // Set presence to menu state for the owning player
+    // Inform PSN, Live, etc... that the local players are in the main menu.
     SetPresenceForLocalPlayers(FVariantData(FString(TEXT("OnMenu"))));
 
-    // load startup map
+    // Load the main menu map.
     LoadFrontEndMap(MainMenuMap);
 
-    // player 0 gets to own the UI
-    ULocalPlayer* Player = GetFirstGamePlayer();
+    // The first local player owns the menu (only player one can
+    // control the menus).
+    ULocalPlayer* const Player = GetFirstGamePlayer();
 
-    //@TODO
-    /*MainMenuUI = MakeShareable(new FMahjongMainMenu());
-    MainMenuUI->Construct(this, Player);
-    MainMenuUI->AddMenuToGameViewport();*/
+    // Create a new MainMenu widget and add it to the viewport.
+    MainMenu = MakeShareable(new FMahjongMainMenu);
+    MainMenu->Construct(this, Player);
+    MainMenu->AddMenuToGameViewport();
 
 #if !MAHJONG_CONSOLE_UI
     // The cached unique net ID is usually set on the welcome screen, but there isn't
@@ -636,21 +669,24 @@ void UMahjongGameInstance::BeginMainMenuState()
     }
 #endif
 
+    // Remove any bound network failure handlers since the players are no longer online.
     RemoveNetworkFailureHandlers();
 }
 
 void UMahjongGameInstance::EndMainMenuState()
 {
-    //@TODO
-    /*if (MainMenuUI.IsValid())
+    // If the main menu is valid, remove it from the viewport and remove it from memory.
+    if (MainMenu.IsValid())
     {
-        MainMenuUI->RemoveMenuFromGameViewport();
-        MainMenuUI = nullptr;
-    }*/
+        MainMenu->RemoveMenuFromGameViewport();
+        MainMenu = nullptr;
+    }
 }
 
 void UMahjongGameInstance::BeginMessageMenuState()
 {
+    // If we enter the message menu state without any message,
+    // go to the initial state.
     if (PendingMessage.DisplayString.IsEmpty())
     {
         UE_LOG(LogOnlineGame, Warning, TEXT("UMahjongGameInstance::BeginMessageMenuState: Display string is empty"));
@@ -659,73 +695,75 @@ void UMahjongGameInstance::BeginMessageMenuState()
     }
 
     // Make sure we're not showing the loadscreen
-    UMahjongGameViewportClient* MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
-
-    if (MahjongViewport != nullptr)
+    UMahjongGameViewportClient* const MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
+    if (MahjongViewport)
     {
         MahjongViewport->HideLoadingScreen();
     }
 
-    //@TODO
-    /*check(!MessageMenuUI.IsValid());
-    MessageMenuUI = MakeShareable(new FMahjongMessageMenu);
-    MessageMenuUI->Construct(this, PendingMessage.PlayerOwner, PendingMessage.DisplayString, PendingMessage.OKButtonString, PendingMessage.CancelButtonString, PendingMessage.NextState);*/
+    // Make sure we are not calling this method from within this state.
+    check(!MessageMenu.IsValid());
+
+    // Create a new MessageMenu widget and add it to the viewport.
+    // Adding to the viewport is done within Construct() since
+    // only one dialog can be visible at a given time.
+    MessageMenu = MakeShareable(new FMahjongMessageMenu);
+    MessageMenu->Construct(this, PendingMessage.PlayerOwner, PendingMessage.DisplayString, PendingMessage.OKButtonString, PendingMessage.CancelButtonString, PendingMessage.NextState);
     
+    // Reset the pending message display string.
     PendingMessage.DisplayString = FText::GetEmpty();
 }
 
 void UMahjongGameInstance::EndMessageMenuState()
 {
-    //@TODO
-    /*if (MessageMenuUI.IsValid())
+    // If the message menu is valid, remove it from the viewport and remove it from memory.
+    if (MessageMenu.IsValid())
     {
-        MessageMenuUI->RemoveFromGameViewport();
-        MessageMenuUI = nullptr;
-    }*/
+        MessageMenu->RemoveFromGameViewport();
+        MessageMenu = nullptr;
+    }
 }
 
 void UMahjongGameInstance::BeginPlayingState()
 {
-    //@TODO
-    //bPendingEnableSplitscreen = true;
+    bPendingEnableSplitscreen = true;
 
-    // Set presence for playing in a map
+    // Inform PSN, Live, etc... that the local players are in game.
     SetPresenceForLocalPlayers(FVariantData(FString(TEXT("InGame"))));
 
-    // Make sure viewport has focus
+    // Make sure the game viewport has focus.
     FSlateApplication::Get().SetAllUserFocusToGameViewport();
 }
 
 void UMahjongGameInstance::EndPlayingState()
 {
-    // Disallow splitscreen
+    // Disable splitscreen since we are likely going back to a menu.
     GetGameViewportClient()->SetDisableSplitscreenOverride(true);
 
-    // Clear the players' presence information
+    // Inform PSN, Live, etc... that the local players are in the main menu.
     SetPresenceForLocalPlayers(FVariantData(FString(TEXT("OnMenu"))));
 
-    UWorld* World = GetWorld();
-    AMahjongGameState* GameState = World ? World->GetGameState<AMahjongGameState>() : nullptr;
+    AMahjongGameState* const GameState = GetWorld() ? GetWorld()->GetGameState<AMahjongGameState>() : nullptr;
 
     if (GameState)
     {
-        // Send round end events for local players
+        // Send game end events for local players.
         for (int i = 0; i < LocalPlayers.Num(); ++i)
         {
-            AMahjongPlayerController* MahjongPC = Cast<AMahjongPlayerController>(LocalPlayers[i]->PlayerController);
-            if (MahjongPC)
+            AMahjongPlayerController* const PlayerController = Cast<AMahjongPlayerController>(LocalPlayers[i]->PlayerController);
+            if (PlayerController)
             {
-                // Assuming you can't win if you quit early
-                MahjongPC->ClientSendRoundEndEvent(false, GameState->ElapsedTime);
+                // You can't win if you quit early.
+                PlayerController->ClientSendGameEndEvent(false, GameState->ElapsedTime);
             }
         }
 
-        // Give the game state a chance to cleanup first
+        // Give the game state a chance to cleanup.
         GameState->RequestFinishAndExitToMainMenu();
     }
     else
     {
-        // If there is no game state, make sure the session is in a good state
+        // If there is no game state, make sure the session is in a good state.
         CleanupSessionOnReturnToMenu();
     }
 }
@@ -734,19 +772,20 @@ void UMahjongGameInstance::OnEndSessionComplete(FName SessionName, bool bWasSucc
 {
     UE_LOG(LogOnline, Log, TEXT("UMahjongGameInstance::OnEndSessionComplete: Session=%s bWasSuccessful=%s"), *SessionName.ToString(), bWasSuccessful ? TEXT("true") : TEXT("false"));
 
-    IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+    const IOnlineSubsystem* const OnlineSubsystem = IOnlineSubsystem::Get();
     if (OnlineSubsystem)
     {
-        IOnlineSessionPtr Sessions = OnlineSubsystem->GetSessionInterface();
-        if (Sessions.IsValid())
+        IOnlineSessionPtr SessionInterface = OnlineSubsystem->GetSessionInterface();
+        if (SessionInterface.IsValid())
         {
-            Sessions->ClearOnStartSessionCompleteDelegate_Handle(OnStartSessionCompleteDelegateHandle);
-            Sessions->ClearOnEndSessionCompleteDelegate_Handle(OnEndSessionCompleteDelegateHandle);
-            Sessions->ClearOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegateHandle);
+            // Clean up session delegate handles.
+            SessionInterface->ClearOnStartSessionCompleteDelegate_Handle(OnStartSessionCompleteDelegateHandle);
+            SessionInterface->ClearOnEndSessionCompleteDelegate_Handle(OnEndSessionCompleteDelegateHandle);
+            SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegateHandle);
         }
     }
 
-    // continue
+    // Clean up online sessions.
     CleanupSessionOnReturnToMenu();
 }
 
@@ -754,44 +793,68 @@ void UMahjongGameInstance::CleanupSessionOnReturnToMenu()
 {
     bool bPendingOnlineOp = false;
 
-    // end online game and then destroy it
-    IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
-    IOnlineSessionPtr Sessions = OnlineSubsystem ? OnlineSubsystem->GetSessionInterface() : nullptr;
+    // End the online game and destroy it.
+    const IOnlineSubsystem* const OnlineSubsystem = IOnlineSubsystem::Get();
+    IOnlineSessionPtr SessionInterface = OnlineSubsystem ? OnlineSubsystem->GetSessionInterface() : nullptr;
 
-    if (Sessions.IsValid())
+    if (SessionInterface.IsValid())
     {
-        EOnlineSessionState::Type SessionState = Sessions->GetSessionState(GameSessionName);
+        // Get the session state.
+        EOnlineSessionState::Type SessionState = SessionInterface->GetSessionState(GameSessionName);
         UE_LOG(LogOnline, Log, TEXT("Session %s is '%s'"), *GameSessionName.ToString(), EOnlineSessionState::ToString(SessionState));
 
-        if (EOnlineSessionState::InProgress == SessionState)
+        // If the session is in progress...
+        if (SessionState == EOnlineSessionState::InProgress)
         {
             UE_LOG(LogOnline, Log, TEXT("Ending session %s on return to main menu"), *GameSessionName.ToString());
-            OnEndSessionCompleteDelegateHandle = Sessions->AddOnEndSessionCompleteDelegate_Handle(OnEndSessionCompleteDelegate);
-            Sessions->EndSession(GameSessionName);
+
+            // Add the OnEndSession delegate (essentially recalling this method).
+            OnEndSessionCompleteDelegateHandle = SessionInterface->AddOnEndSessionCompleteDelegate_Handle(OnEndSessionCompleteDelegate);
+
+            // End the session.
+            SessionInterface->EndSession(GameSessionName);
+
+            // Indicate that we still have some online operations to do (via OnEndSessionCompleteDelegate).
             bPendingOnlineOp = true;
         }
-        else if (EOnlineSessionState::Ending == SessionState)
+        else if (SessionState == EOnlineSessionState::Ending)
         {
             UE_LOG(LogOnline, Log, TEXT("Waiting for session %s to end on return to main menu"), *GameSessionName.ToString());
-            OnEndSessionCompleteDelegateHandle = Sessions->AddOnEndSessionCompleteDelegate_Handle(OnEndSessionCompleteDelegate);
+
+            // Add the OnEndSession delegate (essentially recalling this method).
+            OnEndSessionCompleteDelegateHandle = SessionInterface->AddOnEndSessionCompleteDelegate_Handle(OnEndSessionCompleteDelegate);
+
+            // Indicate that we still have some online operations to do (via OnEndSessionCompleteDelegate).
             bPendingOnlineOp = true;
         }
-        else if (EOnlineSessionState::Ended == SessionState || EOnlineSessionState::Pending == SessionState)
+        else if (SessionState == EOnlineSessionState::Ended || SessionState == EOnlineSessionState::Pending)
         {
             UE_LOG(LogOnline, Log, TEXT("Destroying session %s on return to main menu"), *GameSessionName.ToString());
-            OnDestroySessionCompleteDelegateHandle = Sessions->AddOnDestroySessionCompleteDelegate_Handle(OnEndSessionCompleteDelegate);
-            Sessions->DestroySession(GameSessionName);
+
+            // Add the OnEndSession delegate (essentially recalling this method).
+            OnDestroySessionCompleteDelegateHandle = SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(OnEndSessionCompleteDelegate);
+
+            // Destroy the session.
+            SessionInterface->DestroySession(GameSessionName);
+
+            // Indicate that we still have some online operations to do (via OnEndSessionCompleteDelegate).
             bPendingOnlineOp = true;
         }
-        else if (EOnlineSessionState::Starting == SessionState)
+        else if (SessionState == EOnlineSessionState::Starting)
         {
             UE_LOG(LogOnline, Log, TEXT("Waiting for session %s to start, and then we will end it to return to main menu"), *GameSessionName.ToString());
-            OnStartSessionCompleteDelegateHandle = Sessions->AddOnStartSessionCompleteDelegate_Handle(OnEndSessionCompleteDelegate);
+
+            // Add the OnEndSession delegate (essentially recalling this method).
+            OnStartSessionCompleteDelegateHandle = SessionInterface->AddOnStartSessionCompleteDelegate_Handle(OnEndSessionCompleteDelegate);
+
+            // Indicate that we still have some online operations to do (via OnEndSessionCompleteDelegate).
             bPendingOnlineOp = true;
         }
     }
 
-    if (!bPendingOnlineOp)
+    // If bPendingOnlineOp is set to true above, we still have things to do online.
+    // Don't disconnect just yet.
+    if (!bPendingOnlineOp && GEngine)
     {
         GEngine->HandleDisconnect(GetWorld(), GetWorld()->GetNetDriver());
     }
@@ -808,8 +871,8 @@ void UMahjongGameInstance::LabelPlayerAsQuitter(ULocalPlayer* LocalPlayer) const
 
 void UMahjongGameInstance::RemoveNetworkFailureHandlers()
 {
-    // Remove the local session/travel failure bindings if they exist
-    if (GEngine->OnTravelFailure().IsBoundToObject(this))
+    // Remove the local session/travel failure bindings if they exist.
+    if (GEngine && GEngine->OnTravelFailure().IsBoundToObject(this))
     {
         GEngine->OnTravelFailure().Remove(TravelLocalSessionFailureDelegateHandle);
     }
@@ -818,7 +881,7 @@ void UMahjongGameInstance::RemoveNetworkFailureHandlers()
 void UMahjongGameInstance::AddNetworkFailureHandlers()
 {
     // Add network/travel error handlers (if they are not already there)
-    if (!GEngine->OnTravelFailure().IsBoundToObject(this))
+    if (GEngine && !GEngine->OnTravelFailure().IsBoundToObject(this))
     {
         TravelLocalSessionFailureDelegateHandle = GEngine->OnTravelFailure().AddUObject(this, &UMahjongGameInstance::TravelLocalSessionFailure);
     }
@@ -826,36 +889,39 @@ void UMahjongGameInstance::AddNetworkFailureHandlers()
 
 bool UMahjongGameInstance::HostGame(ULocalPlayer* LocalPlayer, const FString& GameType, const FString& InTravelURL)
 {
+    // If the player is offline...
     if (!GetIsOnline())
     {
-        // Offline game, just go straight to map
+        // Show the loading screen.
         ShowLoadingScreen();
+        // Go to the Playing state.
         GotoState(MahjongGameInstanceState::Playing);
 
-        // Travel to the specified match URL
+        // Travel to the specified match URL.
         TravelURL = InTravelURL;
         GetWorld()->ServerTravel(TravelURL);
         return true;
     }
 
-    // Online game
-    AMahjongGameSession* GameSession = GetGameSession();
+    // The player is online.
+    AMahjongGameSession* const GameSession = GetGameSession();
     if (GameSession)
     {
-        // add callback delegate for completion
+        // Add callback delegate for presence completion.
         OnCreatePresenceSessionCompleteDelegateHandle = GameSession->OnCreatePresenceSessionComplete().AddUObject(this, &UMahjongGameInstance::OnCreatePresenceSessionComplete);
 
         TravelURL = InTravelURL;
         bool const bIsLanMatch = InTravelURL.Contains(TEXT("?bIsLanMatch"));
 
-        //determine the map name from the travelURL
-        const FString& MapNameSubStr = "/Game/Maps/";
-        const FString& ChoppedMapName = TravelURL.RightChop(MapNameSubStr.Len());
-        const FString& MapName = ChoppedMapName.LeftChop(ChoppedMapName.Len() - ChoppedMapName.Find("?game"));
+        // Determine the map name from the TravelURL.
+        const FString MapNameSubStr = "/Game/Maps/";
+        const FString ChoppedMapName = TravelURL.RightChop(MapNameSubStr.Len());
+        const FString MapName = ChoppedMapName.LeftChop(ChoppedMapName.Len() - ChoppedMapName.Find("?game"));
 
+        // If we successfully hosted a session...
         if (GameSession->HostSession(LocalPlayer->GetPreferredUniqueNetId(), GameSessionName, GameType, MapName, bIsLanMatch, true, GameSession->GetMaxPlayers()))
         {
-            // If any error occured in the above, pending state would be set
+            // If any error occured, pending state would be set
             if ((PendingState == CurrentState) || (PendingState == MahjongGameInstanceState::None))
             {
                 // Go ahead and go into loading state now
@@ -872,17 +938,19 @@ bool UMahjongGameInstance::HostGame(ULocalPlayer* LocalPlayer, const FString& Ga
 
 bool UMahjongGameInstance::JoinSession(ULocalPlayer* LocalPlayer, int32 SessionIndexInSearchResults)
 {
-    // needs to tear anything down based on current state?
-
-    AMahjongGameSession* GameSession = GetGameSession();
+    AMahjongGameSession* const GameSession = GetGameSession();
     if (GameSession)
     {
+        // We are connected online, so add the appropriate network failure handlers.
         AddNetworkFailureHandlers();
 
+        // Bind the OnJoinSessionComplete delegate.
         OnJoinSessionCompleteDelegateHandle = GameSession->OnJoinSessionComplete().AddUObject(this, &UMahjongGameInstance::OnJoinSessionComplete);
+
+        // If we have successfully joined a session...
         if (GameSession->JoinSession(LocalPlayer->GetPreferredUniqueNetId(), GameSessionName, SessionIndexInSearchResults))
         {
-            // If any error occured in the above, pending state would be set
+            // If any error occured, pending state would be set
             if ((PendingState == CurrentState) || (PendingState == MahjongGameInstanceState::None))
             {
                 // Go ahead and go into loading state now
@@ -899,16 +967,19 @@ bool UMahjongGameInstance::JoinSession(ULocalPlayer* LocalPlayer, int32 SessionI
 
 bool UMahjongGameInstance::JoinSession(ULocalPlayer* LocalPlayer, const FOnlineSessionSearchResult& SearchResult)
 {
-    // needs to tear anything down based on current state?
-    AMahjongGameSession* GameSession = GetGameSession();
+    AMahjongGameSession* const GameSession = GetGameSession();
     if (GameSession)
     {
+        // We are connected online, so add the appropriate network failure handlers.
         AddNetworkFailureHandlers();
 
+        // Bind the OnJoinSessionComplete delegate.
         OnJoinSessionCompleteDelegateHandle = GameSession->OnJoinSessionComplete().AddUObject(this, &UMahjongGameInstance::OnJoinSessionComplete);
+
+        // If we have successfully joined a session...
         if (GameSession->JoinSession(LocalPlayer->GetPreferredUniqueNetId(), GameSessionName, SearchResult))
         {
-            // If any error occured in the above, pending state would be set
+            // If any error occured, pending state would be set
             if ((PendingState == CurrentState) || (PendingState == MahjongGameInstanceState::None))
             {
                 // Go ahead and go into loading state now
@@ -925,32 +996,49 @@ bool UMahjongGameInstance::JoinSession(ULocalPlayer* LocalPlayer, const FOnlineS
 
 void UMahjongGameInstance::OnJoinSessionComplete(EOnJoinSessionCompleteResult::Type Result)
 {
-    // unhook the delegate
-    AMahjongGameSession* GameSession = GetGameSession();
+    AMahjongGameSession* const GameSession = GetGameSession();
     if (GameSession)
     {
+        // Unbind the delegate (that points to this method).
         GameSession->OnJoinSessionComplete().Remove(OnJoinSessionCompleteDelegateHandle);
     }
 
     // Add the splitscreen player if one exists
     if (Result == EOnJoinSessionCompleteResult::Success && LocalPlayers.Num() > 1)
     {
-        IOnlineSessionPtr Sessions = Online::GetSessionInterface();
-        if (Sessions.IsValid() && LocalPlayers[1]->GetPreferredUniqueNetId().IsValid())
+        IOnlineSessionPtr SessionInterface = Online::GetSessionInterface();
+
+        if (SessionInterface.IsValid())
         {
-            Sessions->RegisterLocalPlayer(*LocalPlayers[1]->GetPreferredUniqueNetId(), GameSessionName,
-                FOnRegisterLocalPlayerCompleteDelegate::CreateUObject(this, &UMahjongGameInstance::OnRegisterJoiningLocalPlayerComplete));
+            // Register all local players.
+            /*for (int32 LocalPlayerIndex = 1; LocalPlayerIndex < LocalPlayers.Num(); ++LocalPlayerIndex)
+            {
+                const ULocalPlayer* const LocalPlayer = LocalPlayers[LocalPlayerIndex];
+
+                if (LocalPlayer->GetPreferredUniqueNetId().IsValid())
+                {
+                    SessionInterface->RegisterLocalPlayer(*LocalPlayer->GetPreferredUniqueNetId(), GameSessionName,
+                        FOnRegisterLocalPlayerCompleteDelegate::CreateUObject(this, &UMahjongGameInstance::OnRegisterJoiningLocalPlayerComplete));
+                }
+            }*/
+
+            if (LocalPlayers[1]->GetPreferredUniqueNetId().IsValid())
+            {
+                SessionInterface->RegisterLocalPlayer(*LocalPlayers[1]->GetPreferredUniqueNetId(), GameSessionName,
+                    FOnRegisterLocalPlayerCompleteDelegate::CreateUObject(this, &UMahjongGameInstance::OnRegisterJoiningLocalPlayerComplete));
+            }
         }
     }
     else
     {
-        // We either failed or there is only a single local user
+        // We either failed or there is only a single local user.
         FinishJoinSession(Result);
     }
 }
 
 void UMahjongGameInstance::FinishJoinSession(EOnJoinSessionCompleteResult::Type Result)
 {
+    // If we were unable to join the session...
     if (Result != EOnJoinSessionCompleteResult::Success)
     {
         FText ReturnReason;
@@ -968,11 +1056,15 @@ void UMahjongGameInstance::FinishJoinSession(EOnJoinSessionCompleteResult::Type 
         }
 
         FText OKButton = NSLOCTEXT("DialogButtons", "OKAY", "OK");
+        
+        // Remove the network handlers.
         RemoveNetworkFailureHandlers();
+        // Show an error message then go to the main menu.
         ShowMessageThenGoMain(ReturnReason, OKButton, FText::GetEmpty());
         return;
     }
 
+    // Go to the session.
     InternalTravelToSession(GameSessionName);
 }
 
@@ -983,49 +1075,68 @@ void UMahjongGameInstance::OnRegisterJoiningLocalPlayerComplete(const FUniqueNet
 
 void UMahjongGameInstance::InternalTravelToSession(const FName& SessionName)
 {
-    APlayerController* PlayerController = GetFirstLocalPlayerController();
+    APlayerController* const PlayerController = GetFirstLocalPlayerController();
 
+    // If the player controller does not exist...
     if (!PlayerController)
     {
         FText ReturnReason = NSLOCTEXT("NetworkErrors", "InvalidPlayerController", "Invalid Player Controller");
         FText OKButton = NSLOCTEXT("DialogButtons", "OKAY", "OK");
+
+        // Remove the network handlers.
         RemoveNetworkFailureHandlers();
+        
+        // Show a message then go to the main menu.
         ShowMessageThenGoMain(ReturnReason, OKButton, FText::GetEmpty());
         return;
     }
 
-    // travel to session
-    IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+    // Travel to the session.
+    const IOnlineSubsystem* const OnlineSubsystem = IOnlineSubsystem::Get();
 
+    // If the OSS is missing...
     if (!OnlineSubsystem)
     {
         FText ReturnReason = NSLOCTEXT("NetworkErrors", "OSSMissing", "OSS missing");
         FText OKButton = NSLOCTEXT("DialogButtons", "OKAY", "OK");
+
+        // Remove the network handlers.
         RemoveNetworkFailureHandlers();
+
+        // Show a message then go to the main menu.
         ShowMessageThenGoMain(ReturnReason, OKButton, FText::GetEmpty());
         return;
     }
 
     FString URL;
-    IOnlineSessionPtr Sessions = OnlineSubsystem->GetSessionInterface();
+    IOnlineSessionPtr SessionInterface = OnlineSubsystem->GetSessionInterface();
 
-    if (!Sessions.IsValid() || !Sessions->GetResolvedConnectString(SessionName, URL))
+    // If the session is invalid or we can't get the connection information...
+    if (!SessionInterface.IsValid() || !SessionInterface->GetResolvedConnectString(SessionName, URL))
     {
         FText FailReason = NSLOCTEXT("NetworkErrors", "TravelSessionFailed", "Travel to Session failed.");
         FText OKButton = NSLOCTEXT("DialogButtons", "OKAY", "OK");
+
+        // Remove the network handlers.
+        RemoveNetworkFailureHandlers();
+
+        // Show a message then go to the main menu.
         ShowMessageThenGoMain(FailReason, OKButton, FText::GetEmpty());
-        UE_LOG(LogOnlineGame, Warning, TEXT("Failed to travel to session upon joining it"));
+
+        UE_LOG(LogOnlineGame, Warning, TEXT("Failed to travel to session upon joining it."));
         return;
     }
 
+    // Client travel to the specfied URL.
     PlayerController->ClientTravel(URL, TRAVEL_Absolute);
 }
 
 void UMahjongGameInstance::OnCreatePresenceSessionComplete(FName SessionName, bool bWasSuccessful)
 {
-    AMahjongGameSession* GameSession = GetGameSession();
+    AMahjongGameSession* const GameSession = GetGameSession();
     if (GameSession)
     {
+        // Remove the delegate binding (this method).
         GameSession->OnCreatePresenceSessionComplete().Remove(OnCreatePresenceSessionCompleteDelegateHandle);
 
         // Add the splitscreen player if one exists
@@ -1040,7 +1151,7 @@ void UMahjongGameInstance::OnCreatePresenceSessionComplete(FName SessionName, bo
         }
         else
         {
-            // We either failed or there is only a single local user
+            // We either failed or there is only a single local user.
             FinishSessionCreation(bWasSuccessful ? EOnJoinSessionCompleteResult::Success : EOnJoinSessionCompleteResult::UnknownError);
         }
     }
@@ -1050,15 +1161,19 @@ bool UMahjongGameInstance::FindSessions(ULocalPlayer* PlayerOwner, bool bFindLAN
 {
     bool bResult = false;
 
-    check(PlayerOwner != nullptr);
+    check(PlayerOwner);
     if (PlayerOwner)
     {
-        AMahjongGameSession* GameSession = GetGameSession();
+        AMahjongGameSession* const GameSession = GetGameSession();
         if (GameSession)
         {
+            // Remove all methods bound to the OnFindSessionsComplete delegate multicast.
             GameSession->OnFindSessionsComplete().RemoveAll(this);
+
+            // Add the OnSearchSessionsComplete delegate.
             OnSearchSessionsCompleteDelegateHandle = GameSession->OnFindSessionsComplete().AddUObject(this, &UMahjongGameInstance::OnSearchSessionsComplete);
 
+            // Find sessions.
             GameSession->FindSessions(PlayerOwner->GetPreferredUniqueNetId(), GameSessionName, bFindLAN, true);
 
             bResult = true;
@@ -1070,9 +1185,10 @@ bool UMahjongGameInstance::FindSessions(ULocalPlayer* PlayerOwner, bool bFindLAN
 
 void UMahjongGameInstance::OnSearchSessionsComplete(bool bWasSuccessful)
 {
-    AMahjongGameSession* Session = GetGameSession();
+    AMahjongGameSession* const Session = GetGameSession();
     if (Session)
     {
+        // Remove the specified delegate.
         Session->OnFindSessionsComplete().Remove(OnSearchSessionsCompleteDelegateHandle);
     }
 }
@@ -1080,25 +1196,28 @@ void UMahjongGameInstance::OnSearchSessionsComplete(bool bWasSuccessful)
 bool UMahjongGameInstance::Tick(float DeltaSeconds)
 {
     // Dedicated server doesn't need to worry about game state
-    if (IsRunningDedicatedServer() == true)
+    if (IsRunningDedicatedServer())
     {
         return true;
     }
 
+    // Change the game state of a change is pending.
     MaybeChangeState();
 
-    UMahjongGameViewportClient* MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
+    UMahjongGameViewportClient* const MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
 
     if (CurrentState != MahjongGameInstanceState::WelcomeScreen)
     {
         // If at any point we aren't licensed (but we are after welcome screen) bounce them back to the welcome screen
-        if (MAHJONG_REQUIRE_OSS && !bIsLicensed && CurrentState != MahjongGameInstanceState::None && !MahjongViewport->IsShowingDialog())
+        if (MAHJONG_ONLINE_LICENSE_REQUIRED && !bIsLicensed && CurrentState != MahjongGameInstanceState::None && !MahjongViewport->IsShowingDialog())
         {
             const FText ReturnReason = NSLOCTEXT("ProfileMessages", "NeedLicense", "The signed in users do not have a license for this game. Please purchase this game from the platform Marketplace or sign in a user with a valid license.");
             const FText OKButton = NSLOCTEXT("DialogButtons", "OKAY", "OK");
 
             ShowMessageThenGotoState(ReturnReason, OKButton, FText::GetEmpty(), MahjongGameInstanceState::WelcomeScreen);
         }
+
+#if MAHJONG_GUI_CONSOLE_UI
 
         // Show controller disconnected dialog if any local players have an invalid controller
         if (MahjongViewport && !MahjongViewport->IsShowingDialog())
@@ -1111,7 +1230,7 @@ bool UMahjongGameInstance::Tick(float DeltaSeconds)
                         LocalPlayers[i],
                         EMahjongDialogType::ControllerDisconnected,
                         FText::Format(NSLOCTEXT("ProfileMessages", "PlayerReconnectControllerFmt", "Player {0}, please reconnect your controller."), FText::AsNumber(i + 1)),
-#ifdef PLATFORM_PS4
+#if PLATFORM_PS4
                         NSLOCTEXT("DialogButtons", "PS4_CrossButtonContinue", "Cross Button - Continue"),
 #else
                         NSLOCTEXT("DialogButtons", "AButtonContinue", "A - Continue"),
@@ -1123,23 +1242,25 @@ bool UMahjongGameInstance::Tick(float DeltaSeconds)
                 }
             }
         }
+
+#endif //
     }
 
     // If we have a pending invite, and we are at the welcome screen, and the session is properly shut down, accept it
     if (PendingInvite.UserId.IsValid() && PendingInvite.bPrivilegesCheckedAndAllowed && CurrentState == MahjongGameInstanceState::PendingInvite)
     {
-        IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
-        IOnlineSessionPtr Sessions = OnlineSubsystem ? OnlineSubsystem->GetSessionInterface() : nullptr;
+        const IOnlineSubsystem* const OnlineSubsystem = IOnlineSubsystem::Get();
+        IOnlineSessionPtr SessionInterface = OnlineSubsystem ? OnlineSubsystem->GetSessionInterface() : nullptr;
 
-        if (Sessions.IsValid())
+        if (SessionInterface.IsValid())
         {
-            EOnlineSessionState::Type SessionState = Sessions->GetSessionState(GameSessionName);
+            EOnlineSessionState::Type SessionState = SessionInterface->GetSessionState(GameSessionName);
 
             if (SessionState == EOnlineSessionState::NoSession)
             {
                 ULocalPlayer* NewPlayerOwner = GetFirstGamePlayer();
 
-                if (NewPlayerOwner != nullptr)
+                if (NewPlayerOwner)
                 {
                     NewPlayerOwner->SetControllerId(PendingInvite.ControllerId);
                     NewPlayerOwner->SetCachedUniqueNetId(PendingInvite.UserId);
@@ -1171,7 +1292,7 @@ void UMahjongGameInstance::HandleSignInChangeMessaging()
     // Master user signed out, go to initial state (if we aren't there already)
     if (CurrentState != GetInitialState())
     {
-#if MAHJONG_CONSOLE_UI
+#if MAHJONG_GUI_CONSOLE_UI && MAHJONG_ONLINE_MONITOR_ACCOUNT_CHANGES
         // Display message on consoles
         const FText ReturnReason = NSLOCTEXT("ProfileMessages", "SignInChange", "Sign in status change occurred.");
         const FText OKButton = NSLOCTEXT("DialogButtons", "OKAY", "OK");
@@ -1193,12 +1314,12 @@ void UMahjongGameInstance::HandleUserLoginChanged(int32 GameUserIndex, ELoginSta
     bIsLicensed = GenericApplication->ApplicationLicenseValid();
 
     // Find the local player associated with this unique net id
-    ULocalPlayer* LocalPlayer = FindLocalPlayerFromUniqueNetId(UserId);
+    ULocalPlayer* const LocalPlayer = FindLocalPlayerFromUniqueNetId(UserId);
 
     // If this user is signed out, but was previously signed in, punt to welcome (or remove splitscreen if that makes sense)
     if (LocalPlayer)
     {
-        if (MAHJONG_REQUIRE_OSS && bDowngraded)
+        if (MAHJONG_ONLINE_MONITOR_ACCOUNT_CHANGES && bDowngraded)
         {
             UE_LOG(LogOnline, Log, TEXT("HandleUserLoginChanged: Player logged out: %s"), *UserId.ToString());
 
@@ -1223,14 +1344,14 @@ void UMahjongGameInstance::HandleAppWillDeactivate()
     if (CurrentState == MahjongGameInstanceState::Playing)
     {
         // Just have the first player controller pause the game.
-        UWorld* GameWorld = GetWorld();
+        UWorld* const GameWorld = GetWorld();
         if (GameWorld)
         {
-            // protect against a second pause menu loading on top of an existing one if someone presses the Jewel / PS buttons.
+            // Protect against a second pause menu loading on top of an existing one if someone presses the Jewel / PS buttons.
             bool bNeedsPause = true;
             for (FConstControllerIterator It = GameWorld->GetControllerIterator(); It; ++It)
             {
-                AMahjongPlayerController* Controller = Cast<AMahjongPlayerController>(*It);
+                AMahjongPlayerController* const Controller = Cast<AMahjongPlayerController>(*It);
                 if (Controller && (Controller->IsPaused() || Controller->IsGameMenuVisible()))
                 {
                     bNeedsPause = false;
@@ -1243,8 +1364,7 @@ void UMahjongGameInstance::HandleAppWillDeactivate()
                 AMahjongPlayerController* const Controller = Cast<AMahjongPlayerController>(GameWorld->GetFirstPlayerController());
                 if (Controller)
                 {
-                    //@TODO
-                    //Controller->ShowInGameMenu();
+                    Controller->ShowInGameMenu();
                 }
             }
         }
@@ -1255,21 +1375,21 @@ void UMahjongGameInstance::HandleAppSuspend()
 {
     // Players will lose connection on resume. However it is possible the game will exit before we get a resume, so we must kick off round end events here.
     UE_LOG(LogOnline, Warning, TEXT("UMahjongGameInstance::HandleAppSuspend"));
-    UWorld* World = GetWorld();
-    AMahjongGameState* GameState = World != nullptr ? World->GetGameState<AMahjongGameState>() : nullptr;
+
+    AMahjongGameState* GameState = GetWorld() != nullptr ? GetWorld()->GetGameState<AMahjongGameState>() : nullptr;
 
     if (CurrentState != MahjongGameInstanceState::None && CurrentState != GetInitialState())
     {
         UE_LOG(LogOnline, Warning, TEXT("UMahjongGameInstance::HandleAppSuspend: Sending round end event for players"));
 
         // Send round end events for local players
-        for (int i = 0; i < LocalPlayers.Num(); ++i)
+        for (int32 i = 0; i < LocalPlayers.Num(); ++i)
         {
-            AMahjongPlayerController* MahjongPC = Cast<AMahjongPlayerController>(LocalPlayers[i]->PlayerController);
-            if (MahjongPC)
+            AMahjongPlayerController* PlayerController = Cast<AMahjongPlayerController>(LocalPlayers[i]->PlayerController);
+            if (PlayerController)
             {
-                // Assuming you can't win if you quit early
-                MahjongPC->ClientSendRoundEndEvent(false, GameState->ElapsedTime);
+                // You can't win if you quit early.
+                PlayerController->ClientSendGameEndEvent(false, GameState->ElapsedTime);
             }
         }
     }
@@ -1297,8 +1417,7 @@ void UMahjongGameInstance::HandleAppResume()
 
 void UMahjongGameInstance::HandleAppLicenseUpdate()
 {
-    TSharedPtr<GenericApplication> GenericApplication = FSlateApplication::Get().GetPlatformApplication();
-    bIsLicensed = GenericApplication->ApplicationLicenseValid();
+    bIsLicensed = FSlateApplication::Get().GetPlatformApplication()->ApplicationLicenseValid();
 }
 
 void UMahjongGameInstance::HandleSafeFrameChanged()
@@ -1309,12 +1428,15 @@ void UMahjongGameInstance::HandleSafeFrameChanged()
 void UMahjongGameInstance::RemoveExistingLocalPlayer(ULocalPlayer* ExistingPlayer)
 {
     check(ExistingPlayer);
-    if (ExistingPlayer->PlayerController != nullptr)
+    if (ExistingPlayer->PlayerController)
     {
-        // Kill the player
-        AMahjongCharacter* MyPawn = Cast<AMahjongCharacter>(ExistingPlayer->PlayerController->GetPawn());
+        // Notify the character that it has been removed.
+        AMahjongCharacter* const MyPawn = Cast<AMahjongCharacter>(ExistingPlayer->PlayerController->GetPawn());
         if (MyPawn)
         {
+            //@Note - KilledBy is overriden from APawn, so the unintuitive method name is unchangeable.
+            //        I could go and just implement my own method, but I'd like to stick with the default
+            //        implementations where they exist.
             MyPawn->KilledBy(nullptr);
         }
     }
@@ -1326,9 +1448,9 @@ void UMahjongGameInstance::RemoveExistingLocalPlayer(ULocalPlayer* ExistingPlaye
 FReply UMahjongGameInstance::OnPairingUsePreviousProfile()
 {
     // Do nothing (except hide the message) if they want to continue using previous profile
-    UMahjongGameViewportClient* MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
+    UMahjongGameViewportClient* const MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
 
-    if (MahjongViewport != nullptr)
+    if (MahjongViewport)
     {
         MahjongViewport->HideDialog();
     }
@@ -1349,11 +1471,11 @@ void UMahjongGameInstance::HandleControllerPairingChanged(int GameUserIndex, con
 
     if (CurrentState == MahjongGameInstanceState::WelcomeScreen)
     {
-        // Don't care about pairing changes at welcome screen
+        // We don't care about pairing changes at welcome screen.
         return;
     }
 
-#if MAHJONG_CONSOLE_UI && PLATFORM_XBOXONE
+#if MAHJONG_GUI_CONSOLE_UI && PLATFORM_XBOXONE
     if (IgnorePairingChangeForControllerId != -1 && GameUserIndex == IgnorePairingChangeForControllerId)
     {
         // We were told to ignore
@@ -1421,7 +1543,7 @@ void UMahjongGameInstance::HandleControllerConnectionChange(bool bIsConnection, 
         // Find the local player associated with this user index
         ULocalPlayer* LocalPlayer = FindLocalPlayerFromControllerId(GameUserIndex);
 
-        if (LocalPlayer == nullptr)
+        if (!LocalPlayer)
         {
             return;		// We don't care about players we aren't tracking
         }
@@ -1433,9 +1555,10 @@ void UMahjongGameInstance::HandleControllerConnectionChange(bool bIsConnection, 
 
 FReply UMahjongGameInstance::OnControllerReconnectConfirm()
 {
-    UMahjongGameViewportClient* MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
+    UMahjongGameViewportClient* const MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
     if (MahjongViewport)
     {
+        // Simply hide the dialog.
         MahjongViewport->HideDialog();
     }
 
@@ -1462,7 +1585,7 @@ TSharedPtr< const FUniqueNetId > UMahjongGameInstance::GetUniqueNetIdFromControl
 void UMahjongGameInstance::SetIsOnline(bool bInIsOnline)
 {
     bIsOnline = bInIsOnline;
-    IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+    IOnlineSubsystem* const OnlineSubsystem = IOnlineSubsystem::Get();
 
     if (OnlineSubsystem)
     {
@@ -1481,9 +1604,16 @@ void UMahjongGameInstance::SetIsOnline(bool bInIsOnline)
 
 void UMahjongGameInstance::TravelToSession(const FName& SessionName)
 {
+    // Add network handlers.
     AddNetworkFailureHandlers();
+
+    // Show the loading screen.
     ShowLoadingScreen();
+
+    // Go to the playing state.
     GotoState(MahjongGameInstanceState::Playing);
+
+    // Travel to the session.
     InternalTravelToSession(SessionName);
 }
 
@@ -1494,11 +1624,11 @@ void UMahjongGameInstance::SetIgnorePairingChangeForControllerId(const int32 Con
 
 bool UMahjongGameInstance::IsLocalPlayerOnline(ULocalPlayer* LocalPlayer)
 {
-    if (LocalPlayer == nullptr)
+    if (!LocalPlayer)
     {
         return false;
     }
-    const IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+    const IOnlineSubsystem* const OnlineSubsystem = IOnlineSubsystem::Get();
     if (OnlineSubsystem)
     {
         IOnlineIdentityPtr IdentityInterface = OnlineSubsystem->GetIdentityInterface();
@@ -1521,14 +1651,13 @@ bool UMahjongGameInstance::IsLocalPlayerOnline(ULocalPlayer* LocalPlayer)
 
 bool UMahjongGameInstance::ValidatePlayerForOnlinePlay(ULocalPlayer* LocalPlayer)
 {
-    // Get the viewport
-    UMahjongGameViewportClient* MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
+    UMahjongGameViewportClient* const MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
 
 #if PLATFORM_XBOXONE
     if (CurrentConnectionStatus != EOnlineServerConnectionStatus::Connected)
     {
         // Don't let them play online if they aren't connected to Xbox LIVE
-        if (MahjongViewport != nullptr)
+        if (MahjongViewport)
         {
             const FText Msg = NSLOCTEXT("NetworkFailures", "ServiceDisconnected", "You must be connected to the Xbox LIVE service to play online.");
             const FText OKButtonString = NSLOCTEXT("DialogButtons", "OKAY", "OK");
@@ -1576,7 +1705,7 @@ bool UMahjongGameInstance::ValidatePlayerForOnlinePlay(ULocalPlayer* LocalPlayer
 
 FReply UMahjongGameInstance::OnConfirmGeneric()
 {
-    UMahjongGameViewportClient* MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
+    UMahjongGameViewportClient* const MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
     if (MahjongViewport)
     {
         MahjongViewport->HideDialog();
@@ -1587,21 +1716,21 @@ FReply UMahjongGameInstance::OnConfirmGeneric()
 
 void UMahjongGameInstance::StartOnlinePrivilegeTask(const IOnlineIdentity::FOnGetUserPrivilegeCompleteDelegate& Delegate, EUserPrivileges::Type Privilege, TSharedPtr< const FUniqueNetId > UserId)
 {
-    //@TODO
-    /*WaitMessageWidget = SNew(SMahjongWaitDialog)
-        .MessageText(NSLOCTEXT("NetworkStatus", "CheckingPrivilegesWithServer", "Checking privileges with server.  Please wait..."));*/
+    // Create a new widget indicating that the application is checking whether the player can actually do online stuff.
+    WaitMessageWidget = SNew(SMahjongWaitWidget)
+        .MessageText(NSLOCTEXT("NetworkStatus", "CheckingPrivilegesWithServer", "Checking privileges with server.  Please wait..."));
 
     if (GEngine && GEngine->GameViewport)
     {
-        UGameViewportClient* const GVC = GEngine->GameViewport;
-        //@TODO
-        //GVC->AddViewportWidgetContent(WaitMessageWidget.ToSharedRef());
+        // Add the wait widget to the viewport.
+        UGameViewportClient* const GameViewportClient = GEngine->GameViewport;
+        GameViewportClient->AddViewportWidgetContent(WaitMessageWidget.ToSharedRef());
     }
 
-    IOnlineIdentityPtr Identity = Online::GetIdentityInterface();
-    if (Identity.IsValid() && UserId.IsValid())
+    IOnlineIdentityPtr IdentityInterface = Online::GetIdentityInterface();
+    if (IdentityInterface.IsValid() && UserId.IsValid())
     {
-        Identity->GetUserPrivilege(*UserId, Privilege, Delegate);
+        IdentityInterface->GetUserPrivilege(*UserId, Privilege, Delegate);
     }
     else
     {
@@ -1612,20 +1741,20 @@ void UMahjongGameInstance::StartOnlinePrivilegeTask(const IOnlineIdentity::FOnGe
 
 void UMahjongGameInstance::CleanupOnlinePrivilegeTask()
 {
-    //@TODO
-    //if (GEngine && GEngine->GameViewport && WaitMessageWidget.IsValid())
+    if (GEngine && GEngine->GameViewport && WaitMessageWidget.IsValid())
     {
-        UGameViewportClient* const GVC = GEngine->GameViewport;
-        //@TODO
-        //GVC->RemoveViewportWidgetContent(WaitMessageWidget.ToSharedRef());
+        // Remove the wait widget from the viewport.
+        UGameViewportClient* const GameViewportClient = GEngine->GameViewport;
+        GameViewportClient->RemoveViewportWidgetContent(WaitMessageWidget.ToSharedRef());
     }
 }
 
 void UMahjongGameInstance::DisplayOnlinePrivilegeFailureDialogs(const FUniqueNetId& UserId, EUserPrivileges::Type Privilege, uint32 PrivilegeResults)
 {
-    // Show warning that the user cannot play due to age restrictions
-    UMahjongGameViewportClient* MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
+    // Show warning that the user cannot play due to age restrictions.
+    UMahjongGameViewportClient* const MahjongViewport = Cast<UMahjongGameViewportClient>(GetGameViewportClient());
     TWeakObjectPtr<ULocalPlayer> OwningPlayer;
+
     if (GEngine)
     {
         for (auto It = GEngine->GetLocalPlayerIterator(GetWorld()); It; ++It)
@@ -1732,4 +1861,14 @@ void UMahjongGameInstance::FinishSessionCreation(EOnJoinSessionCompleteResult::T
         FText OKButton = NSLOCTEXT("DialogButtons", "OKAY", "OK");
         ShowMessageThenGoMain(ReturnReason, OKButton, FText::GetEmpty());
     }
+}
+
+// Method for quick-match. Called only by Quick Match in Main Menu.
+void UMahjongGameInstance::BeginHostingGame(int32 Map)
+{
+    ShowLoadingScreen();
+    GotoState(MahjongGameInstanceState::Playing);
+
+    // Travel to the specified match URL.
+    GetWorld()->ServerTravel(FString::Printf(TEXT("/Game/Maps/Stages/Map%d?game=Japanese?listen"), Map));
 }

@@ -30,6 +30,7 @@ void UMahjongGameViewportClient::AddViewportWidgetContent(TSharedRef<class SWidg
 {
     UE_LOG(LogPlayerManagement, Log, TEXT("UMahjongGameViewportClient::AddViewportWidgetContent: %p"), &ViewportContent.Get());
 
+    // Only display the widget if a dialog and loading widget does not exist. We need to hide those first.
     if ((DialogWidget.IsValid() || LoadingWidget.IsValid()) && ViewportContent != DialogWidget && ViewportContent != LoadingWidget)
     {
         // Add to the hidden widget list, and don't show it until we hide the dialog widget.
@@ -37,11 +38,13 @@ void UMahjongGameViewportClient::AddViewportWidgetContent(TSharedRef<class SWidg
         return;
     }
 
+    // If the viewport is already displaying the widget we do not need to add it again.
     if (ViewportContentStack.Contains(ViewportContent))
     {
         return;
     }
 
+    // Extra measure to ensure only one instance of this widget exists. 
     ViewportContentStack.AddUnique(ViewportContent);
     Super::AddViewportWidgetContent(ViewportContent, ZOrder);
 }
@@ -50,6 +53,7 @@ void UMahjongGameViewportClient::RemoveViewportWidgetContent(TSharedRef<class SW
 {
     UE_LOG(LogPlayerManagement, Log, TEXT("UMahjongGameViewportClient::RemoveViewportWidgetContent: %p"), &ViewportContent.Get());
 
+    // Remove the widget from whichever stack it is in.
     ViewportContentStack.Remove(ViewportContent);
     HiddenViewportContentStack.Remove(ViewportContent);
 
@@ -58,6 +62,7 @@ void UMahjongGameViewportClient::RemoveViewportWidgetContent(TSharedRef<class SW
 
 void UMahjongGameViewportClient::HideExistingWidgets()
 {
+    // We shouldn't have any hidden widgets at this point.
     check(HiddenViewportContentStack.Num() == 0);
 
     TArray<TSharedRef<class SWidget>> CopyOfViewportContentStack = ViewportContentStack;
@@ -140,10 +145,11 @@ void UMahjongGameViewportClient::HideDialog()
         RemoveViewportWidgetContent(DialogWidget.ToSharedRef());
 
         // Destroy the dialog widget
-        DialogWidget = NULL;
+        DialogWidget = nullptr;
 
         if (!LoadingWidget.IsValid())
         {
+            // Now that the dialog is gone we can display the queued hidden widgets.
             ShowExistingWidgets();
         }
 
@@ -153,20 +159,22 @@ void UMahjongGameViewportClient::HideDialog()
             FSlateApplication::Get().SetKeyboardFocus(OldFocusWidget, EFocusCause::SetDirectly);
         }
 
-        OldFocusWidget = NULL;
+        OldFocusWidget = nullptr;
     }
 }
 
 void UMahjongGameViewportClient::ShowLoadingScreen()
 {
+    // If the loading screen is already being shown, return.
     if (LoadingWidget.IsValid())
     {
         return;
     }
 
+    // If the dialog widget is being shown, hide it since the loading
+    // screen takes priority.
     if (DialogWidget.IsValid())
     {
-        // Hide the dialog widget (loading screen takes priority)
         check(!HiddenViewportContentStack.Contains(DialogWidget.ToSharedRef()));
         check(ViewportContentStack.Contains(DialogWidget.ToSharedRef()));
         RemoveViewportWidgetContent(DialogWidget.ToSharedRef());
@@ -178,23 +186,28 @@ void UMahjongGameViewportClient::ShowLoadingScreen()
         HideExistingWidgets();
     }
 
+    // Create a new LoadingWidget.
     LoadingWidget = SNew(SMahjongLoadingWidget);
 
+    // Add it to the viewport.
     AddViewportWidgetContent(LoadingWidget.ToSharedRef());
 }
 
 void UMahjongGameViewportClient::HideLoadingScreen()
 {
+    // If the widget is invalid it is already hidden. Return.
     if (!LoadingWidget.IsValid())
     {
         return;
     }
 
+    // Remove the widget from the viewport.
     RemoveViewportWidgetContent(LoadingWidget.ToSharedRef());
 
-    LoadingWidget = NULL;
+    // Destroy the widget.
+    LoadingWidget = nullptr;
 
-    // Show the dialog widget if we need to
+    // Show the dialog widget if we need to.
     if (DialogWidget.IsValid())
     {
         check(HiddenViewportContentStack.Contains(DialogWidget.ToSharedRef()));
@@ -237,7 +250,7 @@ void UMahjongGameViewportClient::Tick(float DeltaSeconds)
 #if WITH_EDITOR
 void UMahjongGameViewportClient::DrawTransition(UCanvas* Canvas)
 {
-    if (GetOuterUEngine() != NULL)
+    if (GetOuterUEngine())
     {
         TEnumAsByte<enum ETransitionType> Type = GetOuterUEngine()->TransitionType;
         switch (Type)

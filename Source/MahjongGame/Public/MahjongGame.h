@@ -8,6 +8,7 @@
 #include "MahjongTypes.h"		// Commonly-used types
 #include "ParticleDefinitions.h"// Particle systems.
 #include "SoundDefinitions.h"   // Sound systems.
+#include "PlatformDefinitions.h"// Platform definitions.
 
 // Log categories
 DECLARE_LOG_CATEGORY_EXTERN(LogMahjong, Log, All);

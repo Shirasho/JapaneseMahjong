@@ -3,7 +3,10 @@
 #include "MahjongGame.h"
 #include "MahjongPlayerState.h"
 
+#include "PlayerDefinitions.h"
+
 #include "MahjongGameState.h"
+#include "MahjongPlayerController.h"
 
 
 AMahjongPlayerState::AMahjongPlayerState(const FObjectInitializer& ObjectInitializer)
@@ -41,6 +44,16 @@ int32 AMahjongPlayerState::GetScore() const
 	return Score;
 }
 
+FString AMahjongPlayerState::GetShortPlayerName() const
+{
+    if (PlayerName.Len() > PLAYER_NAME_LENGTH_MAX)
+    {
+        return PlayerName.Left(PLAYER_NAME_LENGTH_MAX) + TEXT("...");
+    }
+
+    return PlayerName;
+}
+
 void AMahjongPlayerState::ScoreWin(TArray<TPair<AMahjongPlayerState*, float>> FromArray)
 {
 	AMahjongGameState* MyGameState = Cast<AMahjongGameState>(GetWorld()->GameState);
@@ -49,20 +62,57 @@ void AMahjongPlayerState::ScoreWin(TArray<TPair<AMahjongPlayerState*, float>> Fr
 
 	if (MyGameState)
 	{
-		for (auto WinData : FromArray)
-		{
-			ScoreLoss(WinData.Key, WinData.Value);
-			ScoreToAdd += WinData.Value;
-			//@TODO: Add score to MyGameState->TeamScores[findMYGAMESTATE]
-		}
+        for (FMahjongPlayerScoreContainer& PlayerScoreContainer : MyGameState->PlayerScores)
+        {
+            //PlayerScoreContainer.AddScore(FromArray.FindByKey(PlayerScoreContainer.PlayerState)->Value);
+            for (auto Pair : FromArray)
+            {
+                if (Pair.Key == PlayerScoreContainer.PlayerState)
+                {
+                    PlayerScoreContainer.AddScore(Pair.Value);
+                    break;
+                }
+            }
+        }
 	}
 
 	Score += ScoreToAdd;
 }
 
-void AMahjongPlayerState::ScoreLoss(AMahjongPlayerState* Player, int32 PointLoss)
+void AMahjongPlayerState::InformAboutWin_Implementation(class AMahjongPlayerState* WinnerPlayerState)
 {
+    //Id can be null for bots
+    if (WinnerPlayerState->UniqueId.IsValid())
+    {
+        //search for the actual killer before calling OnKill()	
+        for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+        {
+            AMahjongPlayerController* PlayerController = Cast<AMahjongPlayerController>(*It);
+            if (PlayerController && PlayerController->IsLocalController())
+            {
+                // A local player might not have an ID if it was created with CreateDebugPlayer.
+                ULocalPlayer* LocalPlayer = Cast<ULocalPlayer>(PlayerController->Player);
+                TSharedPtr<const FUniqueNetId> LocalID = LocalPlayer->GetCachedUniqueNetId();
+                if (LocalID.IsValid() && *LocalPlayer->GetCachedUniqueNetId() == *WinnerPlayerState->UniqueId)
+                {
+                    PlayerController->OnWin();
+                }
+            }
+        }
+    }
+}
 
+void AMahjongPlayerState::BroadcastWin_Implementation(class AMahjongPlayerState* WinnerPlayerState)
+{
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+    {
+        // all local players get death messages so they can update their huds.
+        AMahjongPlayerController* PlayerController = Cast<AMahjongPlayerController>(*It);
+        if (PlayerController && PlayerController->IsLocalController())
+        {
+            PlayerController->OnWinMessage(WinnerPlayerState);
+        }
+    }
 }
 
 void AMahjongPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const

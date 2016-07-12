@@ -1,6 +1,7 @@
 // Distributed by Shirasho Media 2016. All rights reserved. Available for distribution under the GNU GENERAL PUBLIC LICENSE v3.
 
 #include "MahjongGame.h"
+#include "MahjongStyle.h"
 #include "AssetRegistryModule.h"
 
 class FMahjongGameModule : public FDefaultGameModuleImpl
@@ -10,15 +11,13 @@ class FMahjongGameModule : public FDefaultGameModuleImpl
 		FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
 
 		//Hot reload hack
-		//@TODO
-		//FSlateStyleRegistry::UnRegisterSlateStyle(FMahjongStyle::GetStyleSetName());
-		//FMahjongStyle::Initialize();
+		FSlateStyleRegistry::UnRegisterSlateStyle(FMahjongStyle::GetStyleSetName());
+		FMahjongStyle::Initialize();
 	}
 
 	virtual void ShutdownModule() override
 	{
-		//@TODO
-		//FMahjongStyle::Shutdown();
+		FMahjongStyle::Shutdown();
 	}
 };
 
