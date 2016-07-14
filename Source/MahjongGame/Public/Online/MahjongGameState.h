@@ -5,6 +5,9 @@
 #include "MahjongPlayerScoreContainer.h"
 #include "MahjongGameState.generated.h"
 
+// Ranked PlayerState map, created from GameState.
+typedef TMap<int32, TWeakObjectPtr<AMahjongPlayerState>> RankedPlayerMap;
+
 UCLASS()
 class AMahjongGameState : public AGameState {
 
@@ -28,5 +31,10 @@ public:
 	UPROPERTY(Transient, Replicated)
 	TArray<FMahjongPlayerScoreContainer> PlayerScores;
 
+public:
+
     void RequestFinishAndExitToMainMenu();
+
+    // Populates the map in the order of the player's score.
+    void PopulateRankedPlayerMap(RankedPlayerMap& OutRankedPlayerMap) const;
 };

@@ -13,10 +13,6 @@
 
 #include "GenericPlatformChunkInstall.h"
 
-//use an EMap index, get back the ChunkIndex that map should be part of.
-//Instead of this mapping we should really use the AssetRegistry to query for chunk mappings, but maps aren't members of the AssetRegistry yet.
-static const int ChunkMapping[] = { 1, 2 };
-
 FMahjongMainMenu::~FMahjongMainMenu()
 {
     IOnlineSessionPtr Sessions = Online::GetSessionInterface();
@@ -256,11 +252,9 @@ void FMahjongMainMenu::Tick(float DeltaSeconds)
     IPlatformChunkInstall* ChunkInstaller = FPlatformMisc::GetPlatformChunkInstall();
     if (ChunkInstaller)
     {
-        EMap SelectedMap = GetSelectedMap();
-
         // Use the asset registry when maps are added to it.
-        int32 MapChunk = ChunkMapping[(int32)SelectedMap];
-        EChunkLocation::Type ChunkLocation = ChunkInstaller->GetChunkLocation(MapChunk);
+        int32 MapChunk = (int32)GetSelectedMap();
+        EChunkLocation::Type ChunkLocation = ChunkInstaller->GetChunkLocation((int32)GetSelectedMap());
 
         FText UpdatedText;
         bool bUpdateText = false;
@@ -309,7 +303,7 @@ bool FMahjongMainMenu::IsTickableWhenPaused() const
     return true;
 }
 
-FMahjongMainMenu::EMap FMahjongMainMenu::GetSelectedMap() const
+EMahjongMap FMahjongMainMenu::GetSelectedMap() const
 {
     //@TODO
     /*if (GameInstance.IsValid() && GameInstance->GetIsOnline() && HostOnlineMapOption.IsValid())
@@ -321,7 +315,7 @@ FMahjongMainMenu::EMap FMahjongMainMenu::GetSelectedMap() const
         return (EMap)HostOfflineMapOption->SelectedMultiChoice;
     }*/
 
-    return EMap::EBambooPark;
+    return EMahjongMap::BAMBOO_PARK;
 }
 
 ULocalPlayer* FMahjongMainMenu::GetPlayerOwner() const

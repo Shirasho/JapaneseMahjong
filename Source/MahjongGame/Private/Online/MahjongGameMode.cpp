@@ -11,6 +11,8 @@
 #include "MahjongGameSession.h"
 #include "MahjongGameInstance.h"
 
+#include "MahjongPlayerStart.h"
+
 AMahjongGameMode::AMahjongGameMode(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
@@ -60,6 +62,45 @@ UClass* AMahjongGameMode::GetDefaultPawnClassForController_Implementation(AContr
 void AMahjongGameMode::DetermineGameWinner()
 {
 	// Do nothing.
+}
+
+AActor* AMahjongGameMode::ChoosePlayerStart_Implementation(AController* Player)
+{
+    APlayerStart* SpawnPoint = nullptr;
+
+    for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
+    {
+        APlayerStart* TestSpawn = *It;
+
+        // Always pick the PlayerStartPIE instance if we are in the editor.
+        if (TestSpawn && TestSpawn->IsA<APlayerStartPIE>())
+        {
+            SpawnPoint = TestSpawn;
+            break;
+        }
+        else
+        {
+            if (IsSpawnPointAllowed(TestSpawn, Player))
+            {
+                SpawnPoint = TestSpawn;
+                break;
+            }
+        }
+    }
+
+    return SpawnPoint ? SpawnPoint : Super::ChoosePlayerStart_Implementation(Player);
+}
+
+bool AMahjongGameMode::IsSpawnPointAllowed(APlayerStart* SpawnPoint, AController* Player) const
+{
+    AMahjongPlayerStart* MahjongSpawnPoint = Cast<AMahjongPlayerStart>(SpawnPoint);
+    if (MahjongSpawnPoint)
+    {
+        AMahjongPlayerState* PlayerState = Cast<AMahjongPlayerState>(Player->PlayerState);
+        return MahjongAreWindsEqual(PlayerState->GetPlayerWind(), MahjongSpawnPoint->SpawnWind) || (MahjongSpawnPoint->SpawnWind == EMahjongPlayerWind::WIND_NONE);
+    }
+
+    return false;
 }
 
 void AMahjongGameMode::RequestFinishAndExitToMainMenu()

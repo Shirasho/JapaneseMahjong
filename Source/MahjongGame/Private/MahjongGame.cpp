@@ -2,12 +2,14 @@
 
 #include "MahjongGame.h"
 #include "MahjongStyle.h"
+#include "MahjongGameDelegates.h"
 #include "AssetRegistryModule.h"
 
 class FMahjongGameModule : public FDefaultGameModuleImpl
 {
 	virtual void StartupModule() override
 	{
+        InitializeMahjongGameDelegates();
 		FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
 
 		//Hot reload hack

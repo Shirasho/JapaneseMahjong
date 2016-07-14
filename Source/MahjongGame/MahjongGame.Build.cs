@@ -15,6 +15,7 @@ public class MahjongGame : ModuleRules
         });
 
         PrivateIncludePaths.AddRange(new string[] {
+            "MahjongGame/Private",
             "MahjongGame/Private/GUI",
             "MahjongGame/Private/GUI/Brushes",
             "MahjongGame/Private/GUI/Menus",

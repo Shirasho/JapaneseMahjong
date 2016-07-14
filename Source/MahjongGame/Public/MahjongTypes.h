@@ -52,13 +52,63 @@ enum class EMahjongTileId : uint8
 	TILE_ID_MAX
 };
 
+UENUM(BlueprintType)
 enum class EMahjongPlayerWind : uint8 {
 	WIND_NONE = 0,
-	WIND_TON = EMahjongTileId::WIND_TON,	// East Wind
-	WIND_NAN = EMahjongTileId::WIND_NAN,	// South Wind
-	WIND_SHA = EMahjongTileId::WIND_SHA,	// West Wind
-	WIND_PEI = EMahjongTileId::WIND_PEI	// North Wind
+	WIND_TON,	// East Wind
+	WIND_NAN,	// South Wind
+	WIND_SHA,	// West Wind
+	WIND_PEI	// North Wind
 };
+
+// Since the player wind needs to be set in places it wouldn't be appropriate to request
+// a EMahjongTileId value since a bunch of invalid values can be passed with it. This method
+// is used to determine whether a PlayerWind value is the same as the TileId value for the
+// corresponding wind value. Example usage would be checking if a tile is the same as
+// the current player's wind (which is used to determine a valid hand in some cases).
+static bool MahjongAreWindsEqual(EMahjongTileId TileId, EMahjongPlayerWind WindId)
+{
+    return (TileId == EMahjongTileId::WIND_TON && WindId == EMahjongPlayerWind::WIND_TON) ||
+        (TileId == EMahjongTileId::WIND_NAN && WindId == EMahjongPlayerWind::WIND_NAN) ||
+        (TileId == EMahjongTileId::WIND_SHA && WindId == EMahjongPlayerWind::WIND_SHA) ||
+        (TileId == EMahjongTileId::WIND_PEI && WindId == EMahjongPlayerWind::WIND_PEI);
+}
+// Since the player wind needs to be set in places it wouldn't be appropriate to request
+// a EMahjongTileId value since a bunch of invalid values can be passed with it. This method
+// is used to determine whether a PlayerWind value is the same as the TileId value for the
+// corresponding wind value. Example usage would be checking if a tile is the same as
+// the current player's wind (which is used to determine a valid hand in some cases).
+static bool MahjongAreWindsEqual(EMahjongPlayerWind WindId, EMahjongTileId TileId)
+{
+    return MahjongAreWindsEqual(TileId, WindId);
+}
+// Since the player wind needs to be set in places it wouldn't be appropriate to request
+// a EMahjongTileId value since a bunch of invalid values can be passed with it. This method
+// is used to determine whether a PlayerWind value is the same as the TileId value for the
+// corresponding wind value. Example usage would be checking if a tile is the same as
+// the current player's wind (which is used to determine a valid hand in some cases).
+static bool MahjongAreWindsEqual(uint8 TileId, EMahjongPlayerWind WindId)
+{
+    return MahjongAreWindsEqual(static_cast<EMahjongTileId>(TileId), WindId);
+}
+// Since the player wind needs to be set in places it wouldn't be appropriate to request
+// a EMahjongTileId value since a bunch of invalid values can be passed with it. This method
+// is used to determine whether a PlayerWind value is the same as the TileId value for the
+// corresponding wind value. Example usage would be checking if a tile is the same as
+// the current player's wind (which is used to determine a valid hand in some cases).
+static bool MahjongAreWindsEqual(EMahjongTileId TileId, uint8 WindId)
+{
+    return MahjongAreWindsEqual(TileId, static_cast<EMahjongPlayerWind>(WindId));
+}
+// Since the player wind needs to be set in places it wouldn't be appropriate to request
+// a EMahjongTileId value since a bunch of invalid values can be passed with it. This method
+// is used to determine whether a PlayerWind value is the same as the TileId value for the
+// corresponding wind value. Example usage would be checking if a tile is the same as
+// the current player's wind (which is used to determine a valid hand in some cases).
+static bool MahjongAreWindsEqual(uint8 TileId, uint8 WindId)
+{
+    return MahjongAreWindsEqual(static_cast<EMahjongTileId>(TileId), static_cast<EMahjongPlayerWind>(WindId));
+}
 
 /*
 * The UHT is incapable of the following:

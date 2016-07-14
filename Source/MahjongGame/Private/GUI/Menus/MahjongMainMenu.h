@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "MahjongMaps.h"
+
 class UMahjongGameInstance;
 class SMahjongMenuWidget;
 class SMahjongDialogWidget;
@@ -10,12 +12,6 @@ class FMahjongMainMenu : public TSharedFromThis<FMahjongMainMenu>, public FTicka
 {
 
 protected:
-
-    enum class EMap
-    {
-        EBambooPark,
-        EMax
-    };
 
     TWeakObjectPtr<UMahjongGameInstance> GameInstance;
     TWeakObjectPtr<ULocalPlayer> PlayerOwner;
@@ -80,7 +76,7 @@ public:
 
 protected:
 
-    EMap GetSelectedMap() const;
+    EMahjongMap GetSelectedMap() const;
 
     /** Start the check for whether the owner of the menu has online privileges */
     void StartOnlinePrivilegeTask(const IOnlineIdentity::FOnGetUserPrivilegeCompleteDelegate& Delegate);

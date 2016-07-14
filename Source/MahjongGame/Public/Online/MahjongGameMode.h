@@ -45,6 +45,9 @@ public:
 	/** Returns default pawn class for given controller */
 	virtual UClass* GetDefaultPawnClassForController_Implementation(AController* InController) override;
 
+    /** Returns the best spawn point for the player. */
+    virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
+
 public:
 
     /* ## AMahjongGameMode ## */
@@ -62,6 +65,9 @@ public:
 protected:
 
     virtual bool IsWinner(class AMahjongPlayerState* PlayerState) const;
+
+    /** Check if player can use spawnpoint */
+    virtual bool IsSpawnPointAllowed(APlayerStart* SpawnPoint, AController* Player) const;
 
 public:
 

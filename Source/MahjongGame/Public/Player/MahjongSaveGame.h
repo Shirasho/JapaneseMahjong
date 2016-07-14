@@ -72,14 +72,8 @@ public:
     void SetGamma(float InGamma);
 
     FORCEINLINE FString GetName() const { return SlotName; }
-    FORCEINLINE float GetGamma() const
-    {
-        return Gamma;
-    }
-    FORCEINLINE int32 GetUserIndex() const
-    {
-        return UserIndex;
-    }
+    FORCEINLINE float GetGamma() const { return Gamma; }
+    FORCEINLINE int32 GetUserIndex() const { return UserIndex; }
 
 protected:
 

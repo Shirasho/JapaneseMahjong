@@ -147,6 +147,13 @@ protected:
     DECLARE_EVENT_OneParam(AMahjongGameSession, FOnFindSessionsComplete, bool /*bWasSuccessful*/);
     FOnFindSessionsComplete FindSessionsCompleteEvent;
 
+    /** Handles to various registered delegates */
+    FDelegateHandle OnStartSessionCompleteDelegateHandle;
+    FDelegateHandle OnCreateSessionCompleteDelegateHandle;
+    FDelegateHandle OnDestroySessionCompleteDelegateHandle;
+    FDelegateHandle OnFindSessionsCompleteDelegateHandle;
+    FDelegateHandle OnJoinSessionCompleteDelegateHandle;
+
 public:
 
     // The number of players allowed in a game.
@@ -240,11 +247,4 @@ public:
     * @return true if successful, false otherwise
     */
     bool TravelToSession(int32 ControllerId, FName SessionName);
-
-    /** Handles to various registered delegates */
-    FDelegateHandle OnStartSessionCompleteDelegateHandle;
-    FDelegateHandle OnCreateSessionCompleteDelegateHandle;
-    FDelegateHandle OnDestroySessionCompleteDelegateHandle;
-    FDelegateHandle OnFindSessionsCompleteDelegateHandle;
-    FDelegateHandle OnJoinSessionCompleteDelegateHandle;
 };

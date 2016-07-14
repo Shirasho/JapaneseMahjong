@@ -3,6 +3,8 @@
 #include "MahjongGame.h"
 #include "MahjongPlayerController_Menu.h"
 
+#include "MahjongStyle.h"
+
 AMahjongPlayerController_Menu::AMahjongPlayerController_Menu(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
@@ -13,5 +15,5 @@ void AMahjongPlayerController_Menu::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
-	//FMahjongStyle::Initialize();
+	FMahjongStyle::Initialize();
 }

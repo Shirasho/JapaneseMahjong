@@ -5,6 +5,7 @@
 
 #include "MahjongGameMode.h"
 #include "MahjongGameInstance.h"
+#include "MahjongPlayerState.h"
 #include "MahjongPlayerController.h"
 
 
@@ -43,6 +44,32 @@ void AMahjongGameState::RequestFinishAndExitToMainMenu()
             check(PlayerController->GetNetMode() == ENetMode::NM_Client);
             PlayerController->ReturnToMainMenu();
         }
+    }
+}
+
+void AMahjongGameState::PopulateRankedPlayerMap(RankedPlayerMap& OutRankedMap) const
+{
+    OutRankedMap.Empty();
+
+    // Go over the PlayerStates, get their score, and rank them.
+    TMultiMap<int32, AMahjongPlayerState*> SortedMap;
+    for (int32 i = 0; i < PlayerArray.Num(); ++i)
+    {
+        int32 Score = 0;
+        AMahjongPlayerState* CurrentPlayerState = Cast<AMahjongPlayerState>(PlayerArray[i]);
+        if (CurrentPlayerState)
+        {
+            SortedMap.Add(FMath::TruncToInt(CurrentPlayerState->Score), CurrentPlayerState);
+        }
+    }
+
+    // Sort by keys.
+    SortedMap.KeySort(TGreater<int32>());
+
+    int32 Rank = 0;
+    for (TMultiMap<int32, AMahjongPlayerState*>::TIterator It(SortedMap); It; ++It)
+    {
+        OutRankedMap.Add(Rank++, It.Value());
     }
 }
 
